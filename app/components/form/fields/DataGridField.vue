@@ -107,96 +107,96 @@ function updateCell(rowIndex: number, key: string, value: unknown) {
               class="datagrid-td"
             >
               <!-- Simple inline input based on column type -->
-              <input
+              <InputText
                 v-if="!col.type || col.type === 'textfield' || col.type === 'email' || col.type === 'url' || col.type === 'phoneNumber'"
                 :type="col.type === 'email' ? 'email' : col.type === 'url' ? 'url' : 'text'"
                 :value="(row[col.key] as string) ?? ''"
                 :placeholder="col.placeholder || col.label || ''"
                 :disabled="disabled || readOnly"
-                class="datagrid-input"
+                fluid
+                class="w-full"
                 @input="updateCell(rowIndex, col.key, ($event.target as HTMLInputElement).value)"
               />
-              <input
+              <InputNumber
                 v-else-if="col.type === 'number' || col.type === 'currency'"
-                type="number"
-                :value="(row[col.key] as number) ?? ''"
+                :modelValue="(row[col.key] as number) ?? null"
                 :placeholder="col.placeholder || col.label || ''"
                 :disabled="disabled || readOnly"
-                class="datagrid-input"
-                @input="updateCell(rowIndex, col.key, Number(($event.target as HTMLInputElement).value))"
+                :mode="col.type === 'currency' ? 'currency' : 'decimal'"
+                :currency="col.type === 'currency' ? 'USD' : undefined"
+                fluid
+                class="w-full"
+                @update:modelValue="updateCell(rowIndex, col.key, $event)"
               />
-              <select
+              <Select
                 v-else-if="col.type === 'select'"
-                :value="(row[col.key] as string) ?? ''"
+                :modelValue="row[col.key]"
+                :options="col.data?.values ?? []"
+                optionLabel="label"
+                optionValue="value"
+                :placeholder="col.placeholder || '— Select —'"
                 :disabled="disabled || readOnly"
-                class="datagrid-input datagrid-select"
-                @change="updateCell(rowIndex, col.key, ($event.target as HTMLSelectElement).value)"
-              >
-                <option value="">{{ col.placeholder || '— Select —' }}</option>
-                <option
-                  v-for="opt in (col.data?.values ?? [])"
-                  :key="String(opt.value)"
-                  :value="String(opt.value)"
-                >
-                  {{ opt.label }}
-                </option>
-              </select>
-              <label
-                v-else-if="col.type === 'checkbox'"
-                class="datagrid-checkbox"
-              >
-                <input
-                  type="checkbox"
-                  :checked="Boolean(row[col.key])"
+                fluid
+                class="w-full"
+                @update:modelValue="updateCell(rowIndex, col.key, $event)"
+              />
+              <div v-else-if="col.type === 'checkbox'" class="flex justify-center">
+                <Checkbox
+                  :binary="true"
+                  :modelValue="Boolean(row[col.key])"
                   :disabled="disabled || readOnly"
-                  @change="updateCell(rowIndex, col.key, ($event.target as HTMLInputElement).checked)"
+                  @update:modelValue="updateCell(rowIndex, col.key, $event)"
                 />
-              </label>
-              <textarea
+              </div>
+              <Textarea
                 v-else-if="col.type === 'textarea'"
                 :value="(row[col.key] as string) ?? ''"
                 :placeholder="col.placeholder || col.label || ''"
                 :disabled="disabled || readOnly"
-                class="datagrid-input datagrid-textarea"
+                fluid
+                class="w-full"
                 rows="2"
+                autoResize
                 @input="updateCell(rowIndex, col.key, ($event.target as HTMLTextAreaElement).value)"
               />
               <!-- Fallback: generic text input -->
-              <input
+              <InputText
                 v-else
                 type="text"
                 :value="(row[col.key] as string) ?? ''"
                 :placeholder="col.placeholder || col.label || ''"
                 :disabled="disabled || readOnly"
-                class="datagrid-input"
+                class="w-full"
                 @input="updateCell(rowIndex, col.key, ($event.target as HTMLInputElement).value)"
               />
             </td>
             <td v-if="!readOnly && !disabled" class="datagrid-td datagrid-td--actions">
-              <button
+              <Button
                 v-if="canRemoveRow"
-                type="button"
-                class="datagrid-btn datagrid-btn--remove"
-                title="Remove row"
+                severity="danger"
+                text
+                class="px-2 font-bold"
+                aria-label="Remove row"
                 @click="removeRow(rowIndex)"
-              >
-                ✕
-              </button>
+              >✕</Button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <button
+    <Button
       v-if="canAddRow"
-      type="button"
-      class="datagrid-add-btn"
+      :label="(component as Record<string, unknown>).addAnother as string || 'Add Another'"
+      severity="secondary"
+      outlined
+      class="mt-3"
       @click="addRow"
     >
-      <span class="datagrid-add-icon">+</span>
-      {{ (component as Record<string, unknown>).addAnother as string || 'Add Another' }}
-    </button>
+      <template #icon>
+        <span class="mr-2 font-bold">+</span>
+      </template>
+    </Button>
 
     <div v-if="hasErrors" class="form-field__errors">
       <p v-for="error in errors" :key="error.type" class="form-field__error">
@@ -290,95 +290,6 @@ function updateCell(rowIndex: number, key: string, value: unknown) {
 
 .datagrid-td--actions {
   text-align: center;
-}
-
-.datagrid-input {
-  width: 100%;
-  padding: 0.4375rem 0.625rem;
-  border: 1.5px solid var(--color-border, #d1d5db);
-  border-radius: 0.375rem;
-  font-size: 0.8125rem;
-  background: var(--color-input-bg, #ffffff);
-  color: var(--color-text, #111827);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  box-sizing: border-box;
-}
-
-.datagrid-input:focus {
-  outline: none;
-  border-color: var(--color-primary, #6366f1);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
-}
-
-.datagrid-input:disabled {
-  background: var(--color-disabled-bg, #f9fafb);
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.datagrid-select {
-  appearance: auto;
-}
-
-.datagrid-textarea {
-  resize: vertical;
-  min-height: 2.25rem;
-}
-
-.datagrid-checkbox {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-}
-
-.datagrid-checkbox input[type="checkbox"] {
-  width: 1rem;
-  height: 1rem;
-  accent-color: var(--color-primary, #6366f1);
-}
-
-.datagrid-btn {
-  border: none;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  transition: all 0.15s ease;
-}
-
-.datagrid-btn--remove {
-  background: rgba(239, 68, 68, 0.08);
-  color: #ef4444;
-}
-
-.datagrid-btn--remove:hover {
-  background: rgba(239, 68, 68, 0.18);
-}
-
-.datagrid-add-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  margin-top: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: rgba(99, 102, 241, 0.06);
-  border: 1.5px dashed var(--color-primary, #6366f1);
-  border-radius: 0.5rem;
-  color: var(--color-primary, #6366f1);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.datagrid-add-btn:hover {
-  background: rgba(99, 102, 241, 0.12);
-}
-
-.datagrid-add-icon {
-  font-size: 1rem;
-  font-weight: 700;
 }
 
 .form-field__errors {

@@ -120,21 +120,16 @@ function getCompletionCount(): number {
               :key="val.value"
               class="survey-td survey-td--value"
             >
-              <label
-                class="survey-radio"
-                :class="{ 'is-selected': isSelected(question.value, val.value) }"
-              >
-                <input
-                  type="radio"
+              <div class="flex justify-center">
+                <RadioButton
+                  :inputId="`survey-${component.key}-${question.value}-${val.value}`"
                   :name="`survey-${component.key}-${question.value}`"
                   :value="val.value"
-                  :checked="isSelected(question.value, val.value)"
+                  :modelValue="surveyData[question.value]"
                   :disabled="disabled || readOnly"
-                  class="survey-radio__input"
-                  @change="selectAnswer(question.value, val.value)"
+                  @update:modelValue="selectAnswer(question.value, $event)"
                 />
-                <span class="survey-radio__indicator" />
-              </label>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -253,58 +248,6 @@ function getCompletionCount(): number {
 
 .survey-td--value {
   text-align: center;
-}
-
-.survey-radio {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  cursor: pointer;
-  position: relative;
-}
-
-.survey-radio__input {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.survey-radio__indicator {
-  width: 1.125rem;
-  height: 1.125rem;
-  border: 2px solid var(--color-border, #d1d5db);
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.survey-radio__indicator::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0);
-  width: 0.5rem;
-  height: 0.5rem;
-  background: var(--color-primary, #6366f1);
-  border-radius: 50%;
-  transition: transform 0.2s ease;
-}
-
-.survey-radio.is-selected .survey-radio__indicator {
-  border-color: var(--color-primary, #6366f1);
-}
-
-.survey-radio.is-selected .survey-radio__indicator::after {
-  transform: translate(-50%, -50%) scale(1);
-}
-
-.survey-radio:hover .survey-radio__indicator {
-  border-color: var(--color-primary, #6366f1);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .form-field__errors { margin-top: 0.375rem; }

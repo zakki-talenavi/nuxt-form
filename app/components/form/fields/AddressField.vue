@@ -83,12 +83,11 @@ function handleBlur() {
         }"
       >
         <label class="address-label">{{ field.label }}</label>
-        <input
-          type="text"
+        <InputText
           :value="(addressData as Record<string, string>)[field.key] ?? ''"
           :placeholder="field.placeholder"
           :disabled="disabled || readOnly"
-          class="address-input"
+          class="w-full"
           @input="updateField(field.key, ($event.target as HTMLInputElement).value)"
           @blur="handleBlur"
         />
@@ -141,30 +140,6 @@ function handleBlur() {
   font-weight: 600;
   color: var(--color-label, #6b7280);
   margin-bottom: 0.25rem;
-}
-
-.address-input {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1.5px solid var(--color-border, #d1d5db);
-  border-radius: 0.375rem;
-  font-size: 0.8125rem;
-  background: var(--color-input-bg, #ffffff);
-  color: var(--color-text, #111827);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  box-sizing: border-box;
-}
-
-.address-input:focus {
-  outline: none;
-  border-color: var(--color-primary, #6366f1);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
-}
-
-.address-input:disabled {
-  background: var(--color-disabled-bg, #f9fafb);
-  cursor: not-allowed;
-  opacity: 0.7;
 }
 
 .has-error .address-grid {

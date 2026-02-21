@@ -59,21 +59,18 @@ function handleBlur() {
       <label
         v-for="opt in options"
         :key="opt.value"
-        class="radio-option"
-        :class="{ 'radio-option--selected': selectedValue === String(opt.value) }"
+        class="radio-option pt-1"
       >
-        <input
-          type="radio"
+        <RadioButton
+          :inputId="`field-${component.key}-${opt.value}`"
           :name="`radio-${component.key}`"
-          :value="opt.value"
-          :checked="selectedValue === String(opt.value)"
+          :value="String(opt.value)"
+          :modelValue="selectedValue"
           :disabled="disabled || readOnly"
-          class="radio-option__input"
           @click="selectOption(String(opt.value))"
           @blur="handleBlur"
         />
-        <span class="radio-option__indicator" />
-        <span class="radio-option__label">{{ opt.label }}</span>
+        <span class="radio-option__label" :for="`field-${component.key}-${opt.value}`">{{ opt.label }}</span>
       </label>
     </div>
 
@@ -94,39 +91,9 @@ function handleBlur() {
 .radio-group { display: flex; flex-direction: column; gap: 0.5rem; }
 .radio-group--inline { flex-direction: row; flex-wrap: wrap; gap: 1rem; }
 
-.radio-option { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.375rem 0; user-select: none; transition: opacity 0.15s; }
+.radio-option { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none; transition: opacity 0.15s; }
 .radio-option:hover { opacity: 0.85; }
-.radio-option__input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
-
-.radio-option__indicator {
-  width: 1.125rem; height: 1.125rem;
-  border-radius: 50%;
-  border: 2px solid var(--color-border, #d1d5db);
-  background: var(--color-input-bg, #ffffff);
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-  position: relative;
-}
-
-.radio-option--selected .radio-option__indicator {
-  border-color: var(--color-primary, #6366f1);
-  background: var(--color-primary, #6366f1);
-}
-
-.radio-option--selected .radio-option__indicator::after {
-  content: '';
-  width: 0.375rem; height: 0.375rem;
-  background: white;
-  border-radius: 50%;
-  position: absolute;
-}
-
-.radio-option__label { font-size: 0.875rem; color: var(--color-text, #111827); }
-
-.radio-option__input:focus-visible + .radio-option__indicator {
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
-}
+.radio-option__label { font-size: 0.875rem; color: var(--color-text, #111827); line-height: 1.4; margin-top: 1px; }
 
 .is-disabled .radio-option { cursor: not-allowed; opacity: 0.6; }
 

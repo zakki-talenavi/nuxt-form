@@ -163,13 +163,13 @@ function isRowOpen(row: EditRow): boolean {
         <template v-if="!isRowOpen(row)">
           <div class="editgrid-row__summary">
             <span class="editgrid-row__text">{{ getRowSummary(row.data) }}</span>
-            <div v-if="!readOnly && !disabled" class="editgrid-row__actions">
-              <button type="button" class="editgrid-btn editgrid-btn--edit" @click="editRow(index)">
-                ✎ Edit
-              </button>
-              <button type="button" class="editgrid-btn editgrid-btn--remove" @click="removeRow(index)">
-                ✕ Remove
-              </button>
+            <div v-if="!readOnly && !disabled" class="editgrid-row__actions flex gap-2">
+              <Button severity="secondary" text class="px-3" @click="editRow(index)">
+                <span class="mr-1">✎</span> Edit
+              </Button>
+              <Button severity="danger" text class="px-3" @click="removeRow(index)">
+                <span class="mr-1">✕</span> Remove
+              </Button>
             </div>
           </div>
         </template>
@@ -183,62 +183,53 @@ function isRowOpen(row: EditRow): boolean {
               class="editgrid-editor-field"
             >
               <label class="editgrid-editor-label">{{ col.label || col.key }}</label>
-              <input
+              <InputText
                 v-if="!col.type || col.type === 'textfield' || col.type === 'email' || col.type === 'url'"
                 :type="col.type === 'email' ? 'email' : col.type === 'url' ? 'url' : 'text'"
                 :value="(row.data[col.key] as string) ?? ''"
                 :placeholder="col.placeholder || ''"
-                class="editgrid-editor-input"
+                class="w-full"
                 @input="updateField(index, col.key, ($event.target as HTMLInputElement).value)"
               />
-              <input
+              <InputNumber
                 v-else-if="col.type === 'number'"
-                type="number"
-                :value="(row.data[col.key] as number) ?? ''"
+                :modelValue="(row.data[col.key] as number) ?? null"
                 :placeholder="col.placeholder || ''"
-                class="editgrid-editor-input"
-                @input="updateField(index, col.key, Number(($event.target as HTMLInputElement).value))"
+                class="w-full"
+                @update:modelValue="updateField(index, col.key, $event)"
               />
-              <select
+              <Select
                 v-else-if="col.type === 'select'"
-                :value="(row.data[col.key] as string) ?? ''"
-                class="editgrid-editor-input editgrid-editor-select"
-                @change="updateField(index, col.key, ($event.target as HTMLSelectElement).value)"
-              >
-                <option value="">— Select —</option>
-                <option
-                  v-for="opt in (col.data?.values ?? [])"
-                  :key="String(opt.value)"
-                  :value="String(opt.value)"
-                >
-                  {{ opt.label }}
-                </option>
-              </select>
-              <textarea
+                :modelValue="row.data[col.key]"
+                :options="col.data?.values ?? []"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="— Select —"
+                class="w-full"
+                @update:modelValue="updateField(index, col.key, $event)"
+              />
+              <Textarea
                 v-else-if="col.type === 'textarea'"
                 :value="(row.data[col.key] as string) ?? ''"
                 :placeholder="col.placeholder || ''"
-                class="editgrid-editor-input editgrid-editor-textarea"
+                class="w-full"
                 rows="2"
+                autoResize
                 @input="updateField(index, col.key, ($event.target as HTMLTextAreaElement).value)"
               />
-              <input
+              <InputText
                 v-else
                 type="text"
                 :value="(row.data[col.key] as string) ?? ''"
                 :placeholder="col.placeholder || ''"
-                class="editgrid-editor-input"
+                class="w-full"
                 @input="updateField(index, col.key, ($event.target as HTMLInputElement).value)"
               />
             </div>
 
-            <div class="editgrid-editor-actions">
-              <button type="button" class="editgrid-btn editgrid-btn--save" @click="saveRow(index)">
-                ✓ Save
-              </button>
-              <button type="button" class="editgrid-btn editgrid-btn--cancel" @click="cancelRow(index)">
-                ✕ Cancel
-              </button>
+            <div class="editgrid-editor-actions flex gap-2 mt-3">
+              <Button @click="saveRow(index)">✓ Save</Button>
+              <Button severity="secondary" outlined @click="cancelRow(index)">✕ Cancel</Button>
             </div>
           </div>
         </template>
@@ -251,15 +242,16 @@ function isRowOpen(row: EditRow): boolean {
     </div>
 
     <!-- Add row button -->
-    <button
+    <Button
       v-if="!readOnly && !disabled"
-      type="button"
-      class="editgrid-add-btn"
+      severity="secondary"
+      outlined
+      class="mt-3"
       @click="addRow"
     >
-      <span class="editgrid-add-icon">+</span>
+      <span class="mr-2 font-bold">+</span>
       {{ (component as Record<string, unknown>).addAnother as string || 'Add Another' }}
-    </button>
+    </Button>
 
     <div v-if="hasErrors" class="form-field__errors">
       <p v-for="error in errors" :key="error.type" class="form-field__error">
@@ -356,97 +348,6 @@ function isRowOpen(row: EditRow): boolean {
   color: var(--color-label, #374151);
   margin-bottom: 0.25rem;
 }
-
-.editgrid-editor-input {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1.5px solid var(--color-border, #d1d5db);
-  border-radius: 0.375rem;
-  font-size: 0.8125rem;
-  background: var(--color-input-bg, #ffffff);
-  color: var(--color-text, #111827);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  box-sizing: border-box;
-}
-
-.editgrid-editor-input:focus {
-  outline: none;
-  border-color: var(--color-primary, #6366f1);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
-}
-
-.editgrid-editor-select { appearance: auto; }
-.editgrid-editor-textarea { resize: vertical; min-height: 2.5rem; }
-
-.editgrid-editor-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-
-.editgrid-btn {
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  padding: 0.375rem 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  transition: all 0.15s ease;
-}
-
-.editgrid-btn--edit {
-  background: rgba(99, 102, 241, 0.08);
-  color: #6366f1;
-}
-.editgrid-btn--edit:hover { background: rgba(99, 102, 241, 0.16); }
-
-.editgrid-btn--remove {
-  background: rgba(239, 68, 68, 0.08);
-  color: #ef4444;
-}
-.editgrid-btn--remove:hover { background: rgba(239, 68, 68, 0.18); }
-
-.editgrid-btn--save {
-  background: var(--color-primary, #6366f1);
-  color: #fff;
-}
-.editgrid-btn--save:hover { opacity: 0.9; }
-
-.editgrid-btn--cancel {
-  background: var(--color-border, #e5e7eb);
-  color: var(--color-text, #374151);
-}
-.editgrid-btn--cancel:hover { background: #d1d5db; }
-
-.editgrid-empty {
-  padding: 1.5rem;
-  text-align: center;
-  color: var(--color-placeholder, #9ca3af);
-  font-size: 0.8125rem;
-  font-style: italic;
-  border: 1.5px solid var(--color-border, #e5e7eb);
-  border-top: none;
-  border-radius: 0 0 0.5rem 0.5rem;
-}
-
-.editgrid-add-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  margin-top: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: rgba(99, 102, 241, 0.06);
-  border: 1.5px dashed var(--color-primary, #6366f1);
-  border-radius: 0.5rem;
-  color: var(--color-primary, #6366f1);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.editgrid-add-btn:hover { background: rgba(99, 102, 241, 0.12); }
-.editgrid-add-icon { font-size: 1rem; font-weight: 700; }
 
 .form-field__errors { margin-top: 0.375rem; }
 .form-field__error { font-size: 0.75rem; color: var(--color-error, #ef4444); margin: 0; display: flex; align-items: center; gap: 0.25rem; }

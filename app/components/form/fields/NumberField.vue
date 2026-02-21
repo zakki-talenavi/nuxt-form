@@ -18,57 +18,27 @@ const emit = defineEmits<{
   'blur': [key: string]
 }>()
 
-const displayValue = ref('')
+const inputValue = computed({
+  get: () => {
+    const v = props.modelValue as number | string | null | undefined
+    if (v === '' || v == null) return null
+    return Number(v)
+  },
+  set: (val: number | null) => emit('update:modelValue', val),
+})
 
 const isInteger = computed(() => props.component.validate?.integer || false)
 const step = computed(() => {
   if (isInteger.value) return 1
   const s = props.component.step as number | undefined
-  return s ?? (props.component.validate as Record<string, unknown>)?.step ?? 'any'
+  return s ?? (props.component.validate as Record<string, unknown>)?.step ?? undefined
 })
-const min = computed(() => props.component.validate?.min)
-const max = computed(() => props.component.validate?.max)
+const min = computed(() => props.component.validate?.min as number | undefined)
+const max = computed(() => props.component.validate?.max as number | undefined)
 const decimalLimit = computed(() => (props.component.decimalLimit as number) ?? 2)
 const hasErrors = computed(() => props.errors.length > 0)
 
-// Sync external modelValue → displayValue
-watch(
-  () => props.modelValue,
-  (val) => {
-    if (val === null || val === undefined || val === '') {
-      displayValue.value = ''
-    } else {
-      displayValue.value = String(val)
-    }
-  },
-  { immediate: true },
-)
-
-function parseInput(raw: string): number | null {
-  if (!raw || raw === '-') return null
-  const cleaned = raw.replace(/[^0-9.\-]/g, '')
-  const num = isInteger.value ? parseInt(cleaned, 10) : parseFloat(cleaned)
-  return isNaN(num) ? null : num
-}
-
-function handleInput(event: Event) {
-  const target = event.target as HTMLInputElement
-  displayValue.value = target.value
-  emit('update:modelValue', parseInput(target.value))
-}
-
 function handleBlur() {
-  // Format on blur
-  const num = parseInput(displayValue.value)
-  if (num !== null) {
-    if (isInteger.value) {
-      displayValue.value = String(Math.round(num))
-    } else if (props.component.requireDecimal) {
-      displayValue.value = num.toFixed(decimalLimit.value)
-    } else {
-      displayValue.value = String(num)
-    }
-  }
   emit('blur', props.component.key)
 }
 </script>
@@ -88,21 +58,20 @@ function handleBlur() {
       {{ component.description }}
     </p>
 
-    <input
+    <InputNumber
       :id="`field-${component.key}`"
-      :value="displayValue"
-      type="number"
+      v-model="inputValue"
       :placeholder="component.placeholder || ''"
       :disabled="disabled || readOnly"
-      :readonly="readOnly"
-      :required="component.validate?.required"
+      :invalid="hasErrors"
       :min="min"
       :max="max"
       :step="step"
-      :class="['form-field__input', component.customClass]"
-      autocomplete="off"
-      inputmode="decimal"
-      @input="handleInput"
+      :readonly="readOnly"
+      :minFractionDigits="component.requireDecimal ? decimalLimit : 0"
+      :maxFractionDigits="isInteger ? 0 : decimalLimit"
+      :useGrouping="false"
+      :class="['w-full', component.customClass]"
       @blur="handleBlur"
     />
 

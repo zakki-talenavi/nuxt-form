@@ -138,14 +138,15 @@ function handleBlur() {
       <div v-if="!hasSignature && !disabled && !readOnly" class="signature-pad__placeholder">
         Sign here
       </div>
-      <button
+      <Button
         v-if="hasSignature && !disabled && !readOnly"
-        type="button"
-        class="signature-pad__clear"
+        severity="secondary"
+        size="small"
+        class="absolute top-2 right-2 p-1 px-2 text-xs z-10"
         @click="clearSignature"
       >
-        ✕ Clear
-      </button>
+        <span class="mr-1">✕</span> Clear
+      </Button>
     </div>
 
     <div v-if="hasErrors" class="form-field__errors">
@@ -165,8 +166,6 @@ function handleBlur() {
 .signature-pad { position: relative; border: 1.5px solid var(--color-border, #d1d5db); border-radius: 0.5rem; overflow: hidden; background: #ffffff; }
 .signature-pad__canvas { width: 100%; height: 100%; cursor: crosshair; display: block; touch-action: none; }
 .signature-pad__placeholder { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--color-placeholder, #9ca3af); font-size: 0.875rem; pointer-events: none; font-style: italic; }
-.signature-pad__clear { position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); border-radius: 0.375rem; padding: 0.25rem 0.625rem; font-size: 0.75rem; cursor: pointer; color: var(--color-text, #374151); transition: background 0.15s; }
-.signature-pad__clear:hover { background: rgba(0,0,0,0.1); }
 
 .has-error .signature-pad { border-color: var(--color-error, #ef4444); }
 .is-disabled .signature-pad__canvas { cursor: not-allowed; opacity: 0.7; }

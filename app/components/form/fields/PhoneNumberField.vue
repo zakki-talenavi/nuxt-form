@@ -76,7 +76,7 @@ function handleBlur() {
       {{ component.description }}
     </p>
 
-    <input
+    <InputText
       :id="`field-${component.key}`"
       :value="displayValue"
       type="tel"
@@ -84,7 +84,8 @@ function handleBlur() {
       :disabled="disabled || readOnly"
       :readonly="readOnly"
       :required="component.validate?.required"
-      :class="['form-field__input', component.customClass]"
+      :invalid="hasErrors"
+      :class="['w-full', component.customClass]"
       autocomplete="tel"
       inputmode="tel"
       @input="handleInput"

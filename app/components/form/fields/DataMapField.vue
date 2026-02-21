@@ -119,35 +119,32 @@ function updateValue(key: string, value: unknown) {
           :key="entry.key"
           class="datamap-row"
         >
-          <div class="datamap-cell datamap-cell--key">
-            <input
-              type="text"
+          <div class="datamap-cell datamap-cell--key pr-2">
+            <InputText
               :value="entry.key"
               :disabled="disabled || readOnly"
-              class="datamap-input"
+              class="w-full"
               placeholder="key"
               @blur="updateKey(entry.key, ($event.target as HTMLInputElement).value)"
             />
           </div>
-          <div class="datamap-cell datamap-cell--value">
-            <input
-              type="text"
+          <div class="datamap-cell datamap-cell--value pr-2">
+            <InputText
               :value="String(entry.value ?? '')"
               :disabled="disabled || readOnly"
-              class="datamap-input"
+              class="w-full"
               placeholder="value"
               @input="updateValue(entry.key, ($event.target as HTMLInputElement).value)"
             />
           </div>
           <div v-if="!readOnly && !disabled" class="datamap-cell datamap-cell--actions">
-            <button
-              type="button"
-              class="datamap-btn datamap-btn--remove"
-              title="Remove entry"
+            <Button
+              severity="danger"
+              text
+              class="px-2 font-bold"
+              aria-label="Remove entry"
               @click="removeEntry(entry.key)"
-            >
-              ✕
-            </button>
+            >✕</Button>
           </div>
         </div>
 
@@ -158,15 +155,18 @@ function updateValue(key: string, value: unknown) {
       </div>
     </div>
 
-    <button
+    <Button
       v-if="!readOnly && !disabled"
-      type="button"
-      class="datamap-add-btn"
+      :label="(component as Record<string, unknown>).addAnother as string || 'Add Another'"
+      severity="secondary"
+      outlined
+      class="mt-3"
       @click="addEntry"
     >
-      <span class="datamap-add-icon">+</span>
-      {{ (component as Record<string, unknown>).addAnother as string || 'Add Another' }}
-    </button>
+      <template #icon>
+        <span class="mr-2 font-bold">+</span>
+      </template>
+    </Button>
 
     <div v-if="hasErrors" class="form-field__errors">
       <p v-for="error in errors" :key="error.type" class="form-field__error">
@@ -234,71 +234,6 @@ function updateValue(key: string, value: unknown) {
   display: flex;
   align-items: center;
 }
-
-.datamap-input {
-  width: 100%;
-  padding: 0.4375rem 0.625rem;
-  border: 1.5px solid var(--color-border, #d1d5db);
-  border-radius: 0.375rem;
-  font-size: 0.8125rem;
-  background: var(--color-input-bg, #ffffff);
-  color: var(--color-text, #111827);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  box-sizing: border-box;
-}
-
-.datamap-input:focus {
-  outline: none;
-  border-color: var(--color-primary, #6366f1);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
-}
-
-.datamap-input:disabled {
-  background: var(--color-disabled-bg, #f9fafb);
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.datamap-btn {
-  border: none;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  transition: all 0.15s ease;
-}
-
-.datamap-btn--remove {
-  background: rgba(239, 68, 68, 0.08);
-  color: #ef4444;
-}
-.datamap-btn--remove:hover { background: rgba(239, 68, 68, 0.18); }
-
-.datamap-empty {
-  padding: 1.25rem;
-  text-align: center;
-  color: var(--color-placeholder, #9ca3af);
-  font-size: 0.8125rem;
-  font-style: italic;
-}
-
-.datamap-add-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  margin-top: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: rgba(99, 102, 241, 0.06);
-  border: 1.5px dashed var(--color-primary, #6366f1);
-  border-radius: 0.5rem;
-  color: var(--color-primary, #6366f1);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.datamap-add-btn:hover { background: rgba(99, 102, 241, 0.12); }
-.datamap-add-icon { font-size: 1rem; font-weight: 700; }
 
 .form-field__errors { margin-top: 0.375rem; }
 .form-field__error { font-size: 0.75rem; color: var(--color-error, #ef4444); margin: 0; display: flex; align-items: center; gap: 0.25rem; }

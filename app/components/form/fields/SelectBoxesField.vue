@@ -32,10 +32,10 @@ const checkedValues = computed(() => {
   return val && typeof val === 'object' ? val : {}
 })
 
-function toggle(key: string) {
+function toggle(key: string, val: boolean) {
   if (props.disabled || props.readOnly) return
   const current = { ...checkedValues.value }
-  current[key] = !current[key]
+  current[key] = val
   emit('update:modelValue', current)
 }
 
@@ -59,22 +59,16 @@ function handleBlur() {
       <label
         v-for="opt in options"
         :key="opt.value"
-        class="selectbox-option"
-        :class="{ 'selectbox-option--selected': checkedValues[opt.value] }"
+        class="selectbox-option pt-1"
       >
-        <input
-          type="checkbox"
-          :checked="checkedValues[opt.value] || false"
+        <Checkbox
+          :inputId="`field-${component.key}-${opt.value}`"
+          :binary="true"
+          :modelValue="checkedValues[opt.value] || false"
           :disabled="disabled || readOnly"
-          class="selectbox-option__input"
-          @change="toggle(opt.value)"
+          @update:modelValue="(val) => toggle(opt.value, val)"
           @blur="handleBlur"
         />
-        <span class="selectbox-option__indicator">
-          <svg v-if="checkedValues[opt.value]" viewBox="0 0 12 12" fill="none" class="selectbox-option__check">
-            <path d="M2 6L5 9L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </span>
         <span class="selectbox-option__label">{{ opt.label }}</span>
       </label>
     </div>
@@ -96,32 +90,9 @@ function handleBlur() {
 .selectboxes-group { display: flex; flex-direction: column; gap: 0.5rem; }
 .selectboxes-group--inline { flex-direction: row; flex-wrap: wrap; gap: 1rem; }
 
-.selectbox-option { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.375rem 0; user-select: none; }
+.selectbox-option { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none; }
 .selectbox-option:hover { opacity: 0.85; }
-.selectbox-option__input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
-
-.selectbox-option__indicator {
-  width: 1.125rem; height: 1.125rem;
-  border-radius: 0.25rem;
-  border: 2px solid var(--color-border, #d1d5db);
-  background: var(--color-input-bg, #ffffff);
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.selectbox-option--selected .selectbox-option__indicator {
-  border-color: var(--color-primary, #6366f1);
-  background: var(--color-primary, #6366f1);
-}
-
-.selectbox-option__check { width: 0.75rem; height: 0.75rem; color: white; }
-.selectbox-option__label { font-size: 0.875rem; color: var(--color-text, #111827); }
-
-.selectbox-option__input:focus-visible + .selectbox-option__indicator {
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
-}
-
+.selectbox-option__label { font-size: 0.875rem; color: var(--color-text, #111827); line-height: 1.4; }
 .is-disabled .selectbox-option { cursor: not-allowed; opacity: 0.6; }
 
 .form-field__errors { margin-top: 0.375rem; }

@@ -18,15 +18,7 @@ const emit = defineEmits<{
   'blur': [key: string]
 }>()
 
-const showPassword = ref(false)
-
-const inputValue = computed({
-  get: () => (props.modelValue as string) ?? '',
-  set: (val: string) => emit('update:modelValue', val),
-})
-
 const hasErrors = computed(() => props.errors.length > 0)
-const inputType = computed(() => (showPassword.value ? 'text' : 'password'))
 
 function handleBlur() {
   emit('blur', props.component.key)
@@ -48,32 +40,20 @@ function handleBlur() {
       {{ component.description }}
     </p>
 
-    <div class="form-field__password-wrap">
-      <input
-        :id="`field-${component.key}`"
-        v-model="inputValue"
-        :type="inputType"
-        :placeholder="component.placeholder || ''"
-        :disabled="disabled || readOnly"
-        :readonly="readOnly"
-        :required="component.validate?.required"
-        :minlength="component.validate?.minLength"
-        :maxlength="component.validate?.maxLength"
-        :class="['form-field__input', component.customClass]"
-        autocomplete="new-password"
-        @blur="handleBlur"
-      />
-      <button
-        type="button"
-        class="form-field__toggle"
-        :aria-label="showPassword ? 'Hide password' : 'Show password'"
-        tabindex="-1"
-        @click="showPassword = !showPassword"
-      >
-        <span v-if="showPassword">🙈</span>
-        <span v-else>👁</span>
-      </button>
-    </div>
+    <Password
+      :id="`field-${component.key}`"
+      v-model="inputValue"
+      :placeholder="component.placeholder || ''"
+      :disabled="disabled || readOnly"
+      :readonly="readOnly"
+      :required="component.validate?.required"
+      :invalid="hasErrors"
+      :class="['w-full', component.customClass]"
+      :feedback="false"
+      toggleMask
+      fluid
+      @blur="handleBlur"
+    />
 
     <div v-if="hasErrors" class="form-field__errors">
       <p v-for="error in errors" :key="error.type" class="form-field__error">

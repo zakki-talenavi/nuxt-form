@@ -19,33 +19,17 @@ const emit = defineEmits<{
   'blur': [key: string]
 }>()
 
-const textareaRef = ref<HTMLTextAreaElement | null>(null)
-
 const inputValue = computed({
   get: () => (props.modelValue as string) ?? '',
-  set: (val: string) => {
-    emit('update:modelValue', val)
-    nextTick(() => autoResize())
-  },
+  set: (val: string) => emit('update:modelValue', val),
 })
 
 const hasErrors = computed(() => props.errors.length > 0)
 const rows = computed(() => (props.component.rows as number) ?? 3)
 
-function autoResize() {
-  const el = textareaRef.value
-  if (!el || props.component.autoExpand === false) return
-  el.style.height = 'auto'
-  el.style.height = `${el.scrollHeight}px`
-}
-
 function handleBlur() {
   emit('blur', props.component.key)
 }
-
-onMounted(() => {
-  if (inputValue.value) autoResize()
-})
 </script>
 
 <template>
@@ -63,18 +47,17 @@ onMounted(() => {
       {{ component.description }}
     </p>
 
-    <textarea
+    <Textarea
       :id="`field-${component.key}`"
-      ref="textareaRef"
       v-model="inputValue"
       :placeholder="component.placeholder || ''"
       :disabled="disabled || readOnly"
       :readonly="readOnly"
       :required="component.validate?.required"
-      :minlength="component.validate?.minLength"
-      :maxlength="component.validate?.maxLength"
+      :invalid="hasErrors"
       :rows="rows"
-      :class="['form-field__textarea', component.customClass]"
+      :autoResize="component.autoExpand !== false"
+      :class="['w-full', component.customClass]"
       @blur="handleBlur"
     />
 

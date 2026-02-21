@@ -28,47 +28,41 @@ const inputType = computed(() => {
   return 'time'
 })
 
-// Convert ISO string ↔ native input value
-const inputValue = computed({
+// Convert ISO string ↔ Date object for PrimeVue DatePicker
+const parsedDate = computed({
   get: () => {
     const val = props.modelValue as string
-    if (!val) return ''
+    if (!val) return null
     try {
       const d = new Date(val)
-      if (isNaN(d.getTime())) return val
-      if (inputType.value === 'datetime-local') {
-        return d.toISOString().slice(0, 16)
-      }
-      if (inputType.value === 'date') {
-        return d.toISOString().slice(0, 10)
-      }
-      return d.toISOString().slice(11, 16)
+      return isNaN(d.getTime()) ? null : d
     } catch {
-      return val
+      return null
     }
   },
-  set: (val: string) => {
+  set: (val: Date | null | Date[]) => {
     if (!val) {
       emit('update:modelValue', '')
       return
     }
-    try {
-      const d = new Date(val)
-      emit('update:modelValue', isNaN(d.getTime()) ? val : d.toISOString())
-    } catch {
-      emit('update:modelValue', val)
+    if (val instanceof Date) {
+      emit('update:modelValue', val.toISOString())
     }
   },
 })
 
-const minDate = computed(() => {
+const minDateObj = computed(() => {
   const dp = props.component.datePicker as Record<string, unknown> | undefined
-  return dp?.minDate ? String(dp.minDate).slice(0, inputType.value === 'date' ? 10 : 16) : undefined
+  if (!dp?.minDate) return undefined
+  const d = new Date(String(dp.minDate))
+  return isNaN(d.getTime()) ? undefined : d
 })
 
-const maxDate = computed(() => {
+const maxDateObj = computed(() => {
   const dp = props.component.datePicker as Record<string, unknown> | undefined
-  return dp?.maxDate ? String(dp.maxDate).slice(0, inputType.value === 'date' ? 10 : 16) : undefined
+  if (!dp?.maxDate) return undefined
+  const d = new Date(String(dp.maxDate))
+  return isNaN(d.getTime()) ? undefined : d
 })
 
 function handleBlur() {
@@ -91,16 +85,21 @@ function handleBlur() {
       {{ component.description }}
     </p>
 
-    <input
+    <DatePicker
       :id="`field-${component.key}`"
-      v-model="inputValue"
-      :type="inputType"
+      v-model="parsedDate"
       :disabled="disabled || readOnly"
       :readonly="readOnly"
+      :invalid="hasErrors"
       :required="component.validate?.required"
-      :min="minDate"
-      :max="maxDate"
-      :class="['form-field__input', component.customClass]"
+      :minDate="minDateObj"
+      :maxDate="maxDateObj"
+      :showTime="enableTime"
+      :timeOnly="!enableDate"
+      hourFormat="24"
+      showIcon
+      fluid
+      :class="component.customClass"
       @blur="handleBlur"
     />
 

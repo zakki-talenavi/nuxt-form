@@ -18,74 +18,20 @@ const emit = defineEmits<{
   'blur': [key: string]
 }>()
 
-const displayValue = ref('')
-const isFocused = ref(false)
+const inputValue = computed({
+  get: () => {
+    const v = props.modelValue as number | string | null | undefined
+    if (v === '' || v == null) return null
+    return Number(v)
+  },
+  set: (val: number | null) => emit('update:modelValue', val)
+})
 
 const hasErrors = computed(() => props.errors.length > 0)
 const decimalLimit = computed(() => (props.component.decimalLimit as number) ?? 2)
 const currencyCode = computed(() => (props.component.currency as string) || 'USD')
 
-const currencySymbol = computed(() => {
-  const symbols: Record<string, string> = {
-    USD: '$', EUR: '€', GBP: '£', JPY: '¥', CNY: '¥',
-    KRW: '₩', INR: '₹', IDR: 'Rp', BRL: 'R$', RUB: '₽',
-    AUD: 'A$', CAD: 'C$', CHF: 'CHF', SEK: 'kr', NOK: 'kr',
-    MXN: 'MX$', SGD: 'S$', HKD: 'HK$', NZD: 'NZ$', THB: '฿',
-  }
-  return symbols[currencyCode.value] || currencyCode.value
-})
-
-function formatCurrency(num: number): string {
-  const fixed = num.toFixed(decimalLimit.value)
-  const [intPart, decPart] = fixed.split('.')
-  const withCommas = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-  return `${currencySymbol.value}${withCommas}${decPart ? '.' + decPart : ''}`
-}
-
-function parseRawValue(raw: string): number | null {
-  const cleaned = raw.replace(/[^0-9.\-]/g, '')
-  const num = parseFloat(cleaned)
-  return isNaN(num) ? null : num
-}
-
-watch(
-  () => props.modelValue,
-  (val) => {
-    if (!isFocused.value) {
-      if (val === null || val === undefined || val === '') {
-        displayValue.value = ''
-      } else {
-        displayValue.value = formatCurrency(Number(val))
-      }
-    }
-  },
-  { immediate: true },
-)
-
-function handleInput(event: Event) {
-  const target = event.target as HTMLInputElement
-  displayValue.value = target.value
-  emit('update:modelValue', parseRawValue(target.value))
-}
-
-function handleFocus() {
-  isFocused.value = true
-  // Show raw number on focus for editing
-  const num = parseRawValue(displayValue.value)
-  if (num !== null) {
-    displayValue.value = String(num)
-  }
-}
-
 function handleBlur() {
-  isFocused.value = false
-  const num = parseRawValue(displayValue.value)
-  if (num !== null) {
-    displayValue.value = formatCurrency(num)
-    emit('update:modelValue', num)
-  } else {
-    displayValue.value = ''
-  }
   emit('blur', props.component.key)
 }
 </script>
@@ -105,24 +51,20 @@ function handleBlur() {
       {{ component.description }}
     </p>
 
-    <div class="form-field__currency-wrap">
-      <span v-if="!isFocused && !displayValue" class="form-field__prefix">{{ currencySymbol }}</span>
-      <input
-        :id="`field-${component.key}`"
-        :value="displayValue"
-        type="text"
-        :placeholder="`${currencySymbol}0.${'0'.repeat(decimalLimit)}`"
-        :disabled="disabled || readOnly"
-        :readonly="readOnly"
-        :required="component.validate?.required"
-        :class="['form-field__input', component.customClass]"
-        autocomplete="off"
-        inputmode="decimal"
-        @input="handleInput"
-        @focus="handleFocus"
-        @blur="handleBlur"
-      />
-    </div>
+    <InputNumber
+      :id="`field-${component.key}`"
+      v-model="inputValue"
+      mode="currency"
+      :currency="currencyCode"
+      :placeholder="component.placeholder || ''"
+      :disabled="disabled || readOnly"
+      :invalid="hasErrors"
+      :readonly="readOnly"
+      :minFractionDigits="decimalLimit"
+      :maxFractionDigits="decimalLimit"
+      :class="['w-full', component.customClass]"
+      @blur="handleBlur"
+    />
 
     <div v-if="hasErrors" class="form-field__errors">
       <p v-for="error in errors" :key="error.type" class="form-field__error">

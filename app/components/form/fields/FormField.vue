@@ -96,40 +96,40 @@ function updateField(key: string, value: unknown) {
               {{ subComp.label }}
               <span v-if="subComp.validate?.required" class="form-field__required">*</span>
             </label>
-            <input
+            <InputText
               v-if="!subComp.type || subComp.type === 'textfield' || subComp.type === 'email'"
               :type="subComp.type === 'email' ? 'email' : 'text'"
               :value="(formData[subComp.key] as string) ?? ''"
               :placeholder="subComp.placeholder || subComp.label || ''"
               :disabled="disabled || readOnly"
-              class="nested-field-input"
+              class="w-full"
               @input="updateField(subComp.key, ($event.target as HTMLInputElement).value)"
             />
-            <input
+            <InputNumber
               v-else-if="subComp.type === 'number'"
-              type="number"
-              :value="(formData[subComp.key] as number) ?? ''"
+              :modelValue="(formData[subComp.key] as number) ?? null"
               :placeholder="subComp.placeholder || ''"
               :disabled="disabled || readOnly"
-              class="nested-field-input"
-              @input="updateField(subComp.key, Number(($event.target as HTMLInputElement).value))"
+              class="w-full"
+              @update:modelValue="updateField(subComp.key, $event)"
             />
-            <textarea
+            <Textarea
               v-else-if="subComp.type === 'textarea'"
               :value="(formData[subComp.key] as string) ?? ''"
               :placeholder="subComp.placeholder || ''"
               :disabled="disabled || readOnly"
-              class="nested-field-input nested-field-textarea"
+              class="w-full"
               rows="3"
+              autoResize
               @input="updateField(subComp.key, ($event.target as HTMLTextAreaElement).value)"
             />
-            <input
+            <InputText
               v-else
               type="text"
               :value="(formData[subComp.key] as string) ?? ''"
               :placeholder="subComp.placeholder || subComp.label || ''"
               :disabled="disabled || readOnly"
-              class="nested-field-input"
+              class="w-full"
               @input="updateField(subComp.key, ($event.target as HTMLInputElement).value)"
             />
           </div>
@@ -202,34 +202,7 @@ function updateField(key: string, value: unknown) {
 
 .form-field__required { color: var(--color-error, #ef4444); margin-left: 2px; }
 
-.nested-field-input {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1.5px solid var(--color-border, #d1d5db);
-  border-radius: 0.375rem;
-  font-size: 0.8125rem;
-  background: var(--color-input-bg, #ffffff);
-  color: var(--color-text, #111827);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  box-sizing: border-box;
-}
-
-.nested-field-input:focus {
-  outline: none;
-  border-color: var(--color-primary, #6366f1);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
-}
-
-.nested-field-input:disabled {
-  background: var(--color-disabled-bg, #f9fafb);
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.nested-field-textarea {
-  resize: vertical;
-  min-height: 3rem;
-}
+.form-field__required { color: var(--color-error, #ef4444); margin-left: 2px; }
 
 .nested-form-empty {
   padding: 1rem;

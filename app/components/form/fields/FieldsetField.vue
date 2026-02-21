@@ -22,32 +22,15 @@ const children = computed(() => (props.component.components as FormComponentSche
 </script>
 
 <template>
-  <fieldset class="fieldset-field" :class="[component.customClass]" :disabled="disabled">
-    <legend v-if="component.legend || component.label" class="fieldset-field__legend">
-      {{ component.legend || component.label }}
-    </legend>
-    <div class="fieldset-field__body">
-      <template v-for="(child, idx) in children" :key="child.key || idx">
-        <slot name="renderComponent" :component="child" />
-      </template>
-    </div>
-  </fieldset>
+  <Fieldset
+    :legend="component.legend || component.label"
+    :class="[component.customClass, 'mb-5']"
+  >
+    <template v-for="(child, idx) in children" :key="child.key || idx">
+      <slot name="renderComponent" :component="child" />
+    </template>
+  </Fieldset>
 </template>
 
 <style scoped>
-.fieldset-field {
-  border: 1.5px solid var(--color-border, #d1d5db);
-  border-radius: 0.5rem;
-  padding: 1.25rem;
-  margin-bottom: 1.25rem;
-  background: transparent;
-}
-
-.fieldset-field__legend {
-  font-weight: 600; font-size: 0.9375rem;
-  color: var(--color-label, #374151);
-  padding: 0 0.5rem;
-}
-
-.fieldset-field__body { display: flex; flex-direction: column; }
 </style>
