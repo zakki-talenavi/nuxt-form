@@ -36,10 +36,12 @@ function handleBlur() {
 
 <template>
   <div 
+    v-if="!component.hidden"
     class="form-field" 
     :class="[
-      { 'has-error': hasErrors, 'is-disabled': disabled },
-      `label-position-${component.labelPosition || 'top'}`
+      { 'has-error': hasErrors, 'is-disabled': component.disabled || disabled },
+      `label-position-${component.labelPosition || 'top'}`,
+      component.customClass
     ]"
   >
     <!-- Label (Top, Left-Left, Left-Right) -->
@@ -69,11 +71,13 @@ function handleBlur() {
           v-model="inputValue"
           :type="inputType"
           :placeholder="component.placeholder || ''"
-          :disabled="disabled || readOnly"
+          :disabled="component.disabled || disabled || readOnly"
           :readonly="readOnly"
           :required="component.validate?.required"
+          :minlength="component.validate?.minLength"
+          :maxlength="component.validate?.maxLength"
           :invalid="hasErrors"
-          :class="['w-full', component.customClass]"
+          class="w-full"
           autocomplete="off"
           @blur="handleBlur"
         />

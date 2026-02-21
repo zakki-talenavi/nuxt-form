@@ -357,21 +357,27 @@ export function validateField(
   }
 
   // ── Min length ────────────────────────────────────────────
-  if (rules.minLength != null && strValue.length < rules.minLength) {
-    errors.push({
-      key: component.key,
-      message: `${label} must be at least ${rules.minLength} characters`,
-      type: 'minLength',
-    })
+  if (rules.minLength != null) {
+    const valStr = value == null ? '' : String(value)
+    if (valStr.length < rules.minLength && valStr.length > 0) { // Don't trigger minLength on empty, let Required handle empty
+      errors.push({
+        key: component.key,
+        message: `${label} must be at least ${rules.minLength} characters`,
+        type: 'minLength',
+      })
+    }
   }
 
   // ── Max length ────────────────────────────────────────────
-  if (rules.maxLength != null && strValue.length > rules.maxLength) {
-    errors.push({
-      key: component.key,
-      message: `${label} must be no more than ${rules.maxLength} characters`,
-      type: 'maxLength',
-    })
+  if (rules.maxLength != null) {
+    const valStr = value == null ? '' : String(value)
+    if (valStr.length > rules.maxLength) {
+      errors.push({
+        key: component.key,
+        message: `${label} must be no more than ${rules.maxLength} characters`,
+        type: 'maxLength',
+      })
+    }
   }
 
   // ── Min words ─────────────────────────────────────────────
@@ -516,21 +522,70 @@ export function evaluateConditional(
   data: Record<string, unknown>,
 ): boolean {
   const conditional = component.conditional
-  if (!conditional || conditional.when == null) {
-    return !component.hidden
+  if (!conditional) return !component.hidden
+
+  // 1. Evaluate Custom JavaScript Logic
+  if (conditional.javascript) {
+    try {
+      let show = !component.hidden
+      const fn = new Function(
+        'data', 'row', 'component', 'show',
+        `"use strict";
+         ${conditional.javascript}
+         return show;`
+      )
+      const result = fn(data, data, component, show)
+      return typeof result === 'boolean' ? result : !!result
+    } catch (e) {
+      console.error('Error evaluating conditional javascript for', component.key, e)
+      return !component.hidden
+    }
   }
 
-  const triggerValue = data[conditional.when]
-  const conditionMet = triggerValue === conditional.eq
-
-  if (conditional.show === true) {
-    return conditionMet
+  // 2. Evaluate JSON Logic
+  if (conditional.json) {
+    return evaluateJsonLogic(conditional.json, data)
   }
-  if (conditional.show === false) {
-    return !conditionMet
+
+  // 3. Evaluate Simple Logic
+  if (conditional.when) {
+    const triggerValue = data[conditional.when]
+    const conditionMet = String(triggerValue) === String(conditional.eq)
+
+    if (conditional.show === true) {
+      return conditionMet
+    }
+    if (conditional.show === false) {
+      return !conditionMet
+    }
   }
 
   return !component.hidden
+}
+
+/**
+ * Evaluate calculated value logic
+ */
+export function evaluateCalculatedValue(
+  component: FormComponentSchema,
+  data: Record<string, unknown>,
+  currentValue: unknown
+): unknown {
+  if (!component.calculateValue) return currentValue
+
+  try {
+    let value = currentValue
+    const fn = new Function(
+      'data', 'row', 'component', 'value',
+      `"use strict";
+       ${component.calculateValue}
+       return value;`
+    )
+    return fn(data, data, component, value)
+  } catch (e) {
+    console.error('Error calculating value for', component.key, e)
+    return currentValue
+  }
 }
 
 /**

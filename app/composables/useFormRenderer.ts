@@ -26,6 +26,7 @@ import {
   flattenComponents,
   validateField,
   evaluateConditional,
+  evaluateCalculatedValue,
   createEmptySubmission,
 } from '../utils/schema-parser'
 import { useAdvancedLogic } from './useAdvancedLogic'
@@ -142,9 +143,32 @@ export function useFormRenderer(
     formData[key] = value
     isDirty.value = true
 
+    executeCalculations()
+
     // Validate on change if configured
     if (options.showErrors === 'change') {
       validateFieldByKey(key)
+    }
+  }
+
+  /**
+   * Run javascript calculations on all applicable fields
+   */
+  function executeCalculations(): void {
+    let changed = false
+    const components = getCachedComponents()
+    
+    for (const comp of components) {
+      if (comp.calculateValue && !comp.hidden && !comp.disabled) {
+        const currentVal = formData[comp.key]
+        const newVal = evaluateCalculatedValue(comp, formData, currentVal)
+        
+        // Prevent infinite loops by checking rough equality
+        if (JSON.stringify(currentVal) !== JSON.stringify(newVal)) {
+          formData[comp.key] = newVal
+          changed = true
+        }
+      }
     }
   }
 
@@ -182,6 +206,8 @@ export function useFormRenderer(
    */
   function validateAll(): ValidationError[] {
     const newErrors = new Map<string, ValidationError[]>()
+
+    executeCalculations()
 
     for (const comp of getCachedComponents()) {
       if (comp.hidden || comp.disabled) continue
