@@ -364,72 +364,193 @@ function copySchema() {
               <AccordionContent>
                 <div class="prop-field mt-3">
                   <label class="prop-label">Label</label>
-                  <input
-                    :value="builder.selectedComponent.value.label"
-                    type="text"
-                    class="prop-input"
-                    @input="updateSelectedProp('label', ($event.target as HTMLInputElement).value)"
+                  <InputText
+                    :model-value="builder.selectedComponent.value.label"
+                    class="w-full"
+                    size="small"
+                    @update:model-value="updateSelectedProp('label', $event)"
                   />
                 </div>
-                <div class="prop-field">
+
+                <!-- Button Specific Properties -->
+                <template v-if="builder.selectedComponent.value.type === 'button'">
+                  <div class="prop-field">
+                    <label class="prop-label">Action</label>
+                    <Select
+                      :model-value="builder.selectedComponent.value.action || 'submit'"
+                      :options="[
+                        { label: 'Submit', value: 'submit' },
+                        { label: 'Event', value: 'event' },
+                        { label: 'Custom', value: 'custom' },
+                        { label: 'Reset', value: 'reset' },
+                        { label: 'OAuth', value: 'oauth' },
+                        { label: 'POST to URL', value: 'url' }
+                      ]"
+                      optionLabel="label"
+                      optionValue="value"
+                      class="w-full"
+                      size="small"
+                      @update:model-value="updateSelectedProp('action', $event)"
+                    />
+                  </div>
+                  <div class="prop-field flex items-center gap-2 mt-2">
+                    <Checkbox
+                      :model-value="builder.selectedComponent.value.saveOnEnter ?? false"
+                      binary
+                      inputId="saveOnEnter"
+                      @update:model-value="updateSelectedProp('saveOnEnter', $event)"
+                    />
+                    <label for="saveOnEnter" class="prop-label mb-0 cursor-pointer">Save On Enter</label>
+                  </div>
+                  <div class="prop-field mt-3">
+                    <label class="prop-label">Theme</label>
+                    <Select
+                      :model-value="builder.selectedComponent.value.theme || 'primary'"
+                      :options="[
+                        { label: 'Primary', value: 'primary' },
+                        { label: 'Secondary', value: 'secondary' },
+                        { label: 'Info', value: 'info' },
+                        { label: 'Success', value: 'success' },
+                        { label: 'Warning', value: 'warning' },
+                        { label: 'Danger', value: 'danger' }
+                      ]"
+                      optionLabel="label"
+                      optionValue="value"
+                      class="w-full"
+                      size="small"
+                      @update:model-value="updateSelectedProp('theme', $event)"
+                    />
+                  </div>
+                  <div class="prop-field">
+                    <label class="prop-label">Size</label>
+                    <Select
+                      :model-value="builder.selectedComponent.value.size || 'md'"
+                      :options="[
+                        { label: 'Small', value: 'sm' },
+                        { label: 'Medium', value: 'md' },
+                        { label: 'Large', value: 'lg' }
+                      ]"
+                      optionLabel="label"
+                      optionValue="value"
+                      class="w-full"
+                      size="small"
+                      @update:model-value="updateSelectedProp('size', $event)"
+                    />
+                  </div>
+                  <div class="prop-field flex items-center gap-2 mt-2">
+                    <Checkbox
+                      :model-value="builder.selectedComponent.value.block ?? false"
+                      binary
+                      inputId="blockBtn"
+                      @update:model-value="updateSelectedProp('block', $event)"
+                    />
+                    <label for="blockBtn" class="prop-label mb-0 cursor-pointer">Block Button</label>
+                  </div>
+                  <div class="prop-field mt-3">
+                    <label class="prop-label">Left Icon</label>
+                    <InputText
+                      :model-value="builder.selectedComponent.value.leftIcon"
+                      placeholder="e.g. pi pi-check"
+                      class="w-full"
+                      size="small"
+                      @update:model-value="updateSelectedProp('leftIcon', $event)"
+                    />
+                  </div>
+                  <div class="prop-field">
+                    <label class="prop-label">Right Icon</label>
+                    <InputText
+                      :model-value="builder.selectedComponent.value.rightIcon"
+                      placeholder="e.g. pi pi-arrow-right"
+                      class="w-full"
+                      size="small"
+                      @update:model-value="updateSelectedProp('rightIcon', $event)"
+                    />
+                  </div>
+                  <div class="prop-field">
+                    <label class="prop-label">Shortcut</label>
+                    <InputText
+                      :model-value="builder.selectedComponent.value.shortcut"
+                      class="w-full"
+                      size="small"
+                      placeholder="e.g. Enter"
+                      @update:model-value="updateSelectedProp('shortcut', $event)"
+                    />
+                  </div>
+                  <div class="prop-field flex items-center gap-2 mt-3">
+                    <Checkbox
+                      :model-value="builder.selectedComponent.value.disableOnInvalid ?? false"
+                      binary
+                      inputId="disableOnInvalid"
+                      @update:model-value="updateSelectedProp('disableOnInvalid', $event)"
+                    />
+                    <label for="disableOnInvalid" class="prop-label mb-0 cursor-pointer">Disable on Form Invalid</label>
+                  </div>
+                </template>
+                <!-- End Button Specific -->
+
+                <div class="prop-field" v-if="builder.selectedComponent.value.type !== 'button'">
                   <label class="prop-label">Label Position</label>
-                  <select
-                    class="prop-input"
-                    :value="builder.selectedComponent.value.labelPosition || 'top'"
-                    @change="updateSelectedProp('labelPosition', ($event.target as HTMLSelectElement).value)"
-                  >
-                    <option value="top">Top</option>
-                    <option value="bottom">Bottom</option>
-                    <option value="left-left">Left (Left-aligned)</option>
-                    <option value="left-right">Left (Right-aligned)</option>
-                    <option value="right-left">Right (Left-aligned)</option>
-                    <option value="right-right">Right (Right-aligned)</option>
-                  </select>
+                  <Select
+                    :model-value="builder.selectedComponent.value.labelPosition || 'top'"
+                    :options="[
+                      { label: 'Top', value: 'top' },
+                      { label: 'Bottom', value: 'bottom' },
+                      { label: 'Left (Left-aligned)', value: 'left-left' },
+                      { label: 'Left (Right-aligned)', value: 'left-right' },
+                      { label: 'Right (Left-aligned)', value: 'right-left' },
+                      { label: 'Right (Right-aligned)', value: 'right-right' }
+                    ]"
+                    optionLabel="label"
+                    optionValue="value"
+                    class="w-full"
+                    size="small"
+                    @update:model-value="updateSelectedProp('labelPosition', $event)"
+                  />
                 </div>
-                <div class="prop-field">
+                <div class="prop-field" v-if="!['button', 'checkbox'].includes(builder.selectedComponent.value.type)">
                   <label class="prop-label">Placeholder</label>
-                  <input
-                    :value="builder.selectedComponent.value.placeholder"
-                    type="text"
-                    class="prop-input"
-                    @input="updateSelectedProp('placeholder', ($event.target as HTMLInputElement).value)"
+                  <InputText
+                    :model-value="builder.selectedComponent.value.placeholder"
+                    class="w-full"
+                    size="small"
+                    @update:model-value="updateSelectedProp('placeholder', $event)"
                   />
                 </div>
                 <div class="prop-field">
                   <label class="prop-label">Description</label>
-                  <input
-                    :value="builder.selectedComponent.value.description"
-                    type="text"
-                    class="prop-input"
-                    @input="updateSelectedProp('description', ($event.target as HTMLInputElement).value)"
+                  <InputText
+                    :model-value="builder.selectedComponent.value.description"
+                    class="w-full"
+                    size="small"
+                    @update:model-value="updateSelectedProp('description', $event)"
                   />
                 </div>
                 <div class="prop-field">
                   <label class="prop-label">Tooltip</label>
-                  <input
-                    :value="builder.selectedComponent.value.tooltip"
-                    type="text"
-                    class="prop-input"
-                    @input="updateSelectedProp('tooltip', ($event.target as HTMLInputElement).value)"
+                  <InputText
+                    :model-value="builder.selectedComponent.value.tooltip"
+                    class="w-full"
+                    size="small"
+                    @update:model-value="updateSelectedProp('tooltip', $event)"
                   />
                 </div>
-                <div class="flex-row">
+                <div class="flex-row" v-if="!['button', 'checkbox'].includes(builder.selectedComponent.value.type)">
                   <div class="prop-field flex-1">
                     <label class="prop-label">Prefix</label>
-                    <input
-                      :value="builder.selectedComponent.value.prefix"
-                      type="text"
-                      class="prop-input"
-                      @input="updateSelectedProp('prefix', ($event.target as HTMLInputElement).value)"
+                    <InputText
+                      :model-value="builder.selectedComponent.value.prefix"
+                      class="w-full"
+                      size="small"
+                      @update:model-value="updateSelectedProp('prefix', $event)"
                     />
                   </div>
                   <div class="prop-field flex-1">
                     <label class="prop-label">Suffix</label>
-                    <input
-                      :value="builder.selectedComponent.value.suffix"
-                      type="text"
-                      class="prop-input"
-                      @input="updateSelectedProp('suffix', ($event.target as HTMLInputElement).value)"
+                    <InputText
+                      :model-value="builder.selectedComponent.value.suffix"
+                      class="w-full"
+                      size="small"
+                      @update:model-value="updateSelectedProp('suffix', $event)"
                     />
                   </div>
                 </div>
@@ -444,23 +565,63 @@ function copySchema() {
                     @change="updateSelectedProp('customClass', $event)"
                   />
                 </div>
-                <div class="prop-section">
-                  <label class="prop-checkbox">
-                    <input
-                      type="checkbox"
-                      :checked="builder.selectedComponent.value.hidden ?? false"
-                      @change="updateSelectedProp('hidden', ($event.target as HTMLInputElement).checked)"
+                <div class="prop-field mt-3">
+                  <label class="prop-label">Tab Index</label>
+                  <InputText
+                    :model-value="builder.selectedComponent.value.tabindex"
+                    class="w-full"
+                    size="small"
+                    placeholder="0"
+                    @update:model-value="updateSelectedProp('tabindex', $event)"
+                  />
+                </div>
+                
+                <div class="prop-section mt-4 flex flex-col gap-3">
+                  <div class="flex items-center gap-2">
+                    <Checkbox
+                      :model-value="builder.selectedComponent.value.hidden ?? false"
+                      binary
+                      inputId="propHidden"
+                      @update:model-value="updateSelectedProp('hidden', $event)"
                     />
-                    <span>Hidden</span>
-                  </label>
-                  <label class="prop-checkbox">
-                    <input
-                      type="checkbox"
-                      :checked="builder.selectedComponent.value.disabled ?? false"
-                      @change="updateSelectedProp('disabled', ($event.target as HTMLInputElement).checked)"
+                    <label for="propHidden" class="prop-label mb-0 cursor-pointer">Hidden</label>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <Checkbox
+                      :model-value="builder.selectedComponent.value.disabled ?? false"
+                      binary
+                      inputId="propDisabled"
+                      @update:model-value="updateSelectedProp('disabled', $event)"
                     />
-                    <span>Disabled</span>
-                  </label>
+                    <label for="propDisabled" class="prop-label mb-0 cursor-pointer">Disabled</label>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <Checkbox
+                      :model-value="builder.selectedComponent.value.autofocus ?? false"
+                      binary
+                      inputId="propAutofocus"
+                      @update:model-value="updateSelectedProp('autofocus', $event)"
+                    />
+                    <label for="propAutofocus" class="prop-label mb-0 cursor-pointer">Initial Focus</label>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <Checkbox
+                      :model-value="builder.selectedComponent.value.tableView ?? true"
+                      binary
+                      inputId="propTableView"
+                      @update:model-value="updateSelectedProp('tableView', $event)"
+                    />
+                    <label for="propTableView" class="prop-label mb-0 cursor-pointer">Table View</label>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <Checkbox
+                      :model-value="builder.selectedComponent.value.modalEdit ?? false"
+                      binary
+                      inputId="propModalEdit"
+                      @update:model-value="updateSelectedProp('modalEdit', $event)"
+                    />
+                    <label for="propModalEdit" class="prop-label mb-0 cursor-pointer">Modal Edit</label>
+                  </div>
                 </div>
               </AccordionContent>
             </AccordionPanel>
@@ -471,22 +632,21 @@ function copySchema() {
               <AccordionContent>
                 <div class="prop-field mt-3">
                   <label class="prop-label">Default Value</label>
-                  <input
-                    :value="builder.selectedComponent.value.defaultValue as string | number || ''"
-                    type="text"
-                    class="prop-input"
-                    @input="updateSelectedProp('defaultValue', ($event.target as HTMLInputElement).value)"
+                  <InputText
+                    :model-value="(builder.selectedComponent.value.defaultValue as string | number) || ''"
+                    class="w-full"
+                    size="small"
+                    @update:model-value="updateSelectedProp('defaultValue', $event)"
                   />
                 </div>
-                <div class="prop-section pt-2">
-                  <label class="prop-checkbox">
-                    <input
-                      type="checkbox"
-                      :checked="builder.selectedComponent.value.multiple ?? false"
-                      @change="updateSelectedProp('multiple', ($event.target as HTMLInputElement).checked)"
-                    />
-                    <span>Multiple Values</span>
-                  </label>
+                <div class="prop-section pt-3 flex items-center gap-2">
+                  <Checkbox
+                    :model-value="builder.selectedComponent.value.multiple ?? false"
+                    binary
+                    inputId="propMultiple"
+                    @update:model-value="updateSelectedProp('multiple', $event)"
+                  />
+                  <label for="propMultiple" class="prop-label mb-0 cursor-pointer">Multiple Values</label>
                 </div>
                 <div class="prop-field mt-3">
                   <CodeEditor
@@ -506,21 +666,21 @@ function copySchema() {
                     <div
                       v-for="(opt, idx) in editingSelectValues"
                       :key="idx"
-                      class="select-option-row"
+                      class="select-option-row flex gap-2 mb-2"
                     >
-                      <input
-                        :value="opt.label"
-                        type="text"
-                        class="prop-input"
+                      <InputText
+                        :model-value="opt.label"
+                        class="w-full"
+                        size="small"
                         placeholder="Label"
-                        @input="updateSelectOption(idx, 'label', ($event.target as HTMLInputElement).value)"
+                        @update:model-value="updateSelectOption(idx, 'label', $event)"
                       />
-                      <input
-                        :value="opt.value"
-                        type="text"
-                        class="prop-input prop-input--code"
+                      <InputText
+                        :model-value="opt.value"
+                        class="w-full font-mono text-xs"
+                        size="small"
                         placeholder="Value"
-                        @input="updateSelectOption(idx, 'value', ($event.target as HTMLInputElement).value)"
+                        @update:model-value="updateSelectOption(idx, 'value', $event)"
                       />
                       <button
                         class="select-option-remove"
@@ -537,48 +697,49 @@ function copySchema() {
             <AccordionPanel value="validation" class="editor-panel">
               <AccordionHeader>Validation</AccordionHeader>
               <AccordionContent>
-                <div class="mt-3">
-                  <label class="prop-checkbox">
-                    <input
-                      type="checkbox"
-                      :checked="builder.selectedComponent.value.validate?.required ?? false"
-                      @change="updateValidation('required', ($event.target as HTMLInputElement).checked)"
-                    />
-                    <span>Required</span>
-                  </label>
+                <div class="mt-3 flex items-center gap-2">
+                  <Checkbox
+                    :model-value="builder.selectedComponent.value.validate?.required ?? false"
+                    binary
+                    inputId="valRequired"
+                    @update:model-value="updateValidation('required', $event)"
+                  />
+                  <label for="valRequired" class="prop-label mb-0 cursor-pointer">Required</label>
                 </div>
 
                 <template v-if="['textfield', 'textarea', 'email', 'password'].includes(builder.selectedComponent.value.type)">
-                  <div class="flex-row mt-3">
+                  <div class="flex-row mt-3 gap-3">
                     <div class="prop-field flex-1">
                       <label class="prop-label">Min Length</label>
-                      <input
-                        :value="builder.selectedComponent.value.validate?.minLength ?? ''"
+                      <InputText
+                        :model-value="builder.selectedComponent.value.validate?.minLength"
                         type="number"
-                        class="prop-input"
+                        class="w-full"
+                        size="small"
                         min="0"
-                        @input="updateValidation('minLength', ($event.target as HTMLInputElement).value ? Number(($event.target as HTMLInputElement).value) : undefined)"
+                        @update:model-value="(val) => updateValidation('minLength', val ? Number(val) : undefined)"
                       />
                     </div>
                     <div class="prop-field flex-1">
                       <label class="prop-label">Max Length</label>
-                      <input
-                        :value="builder.selectedComponent.value.validate?.maxLength ?? ''"
+                      <InputText
+                        :model-value="builder.selectedComponent.value.validate?.maxLength"
                         type="number"
-                        class="prop-input"
+                        class="w-full"
+                        size="small"
                         min="0"
-                        @input="updateValidation('maxLength', ($event.target as HTMLInputElement).value ? Number(($event.target as HTMLInputElement).value) : undefined)"
+                        @update:model-value="(val) => updateValidation('maxLength', val ? Number(val) : undefined)"
                       />
                     </div>
                   </div>
-                  <div class="prop-field">
+                  <div class="prop-field mt-3">
                     <label class="prop-label">Regular Expression Pattern</label>
-                    <input
-                      :value="builder.selectedComponent.value.validate?.pattern ?? ''"
-                      type="text"
-                      class="prop-input prop-input--code"
+                    <InputText
+                      :model-value="builder.selectedComponent.value.validate?.pattern"
+                      class="w-full font-mono text-xs"
+                      size="small"
                       placeholder="e.g. ^[a-zA-Z0-9]+$"
-                      @input="updateValidation('pattern', ($event.target as HTMLInputElement).value || undefined)"
+                      @update:model-value="(val) => updateValidation('pattern', val || undefined)"
                     />
                   </div>
                 </template>
@@ -613,11 +774,11 @@ function copySchema() {
               <AccordionContent>
                 <div class="prop-field mt-3">
                   <label class="prop-label">Property Name (API Key)</label>
-                  <input
-                    :value="builder.selectedComponent.value.key"
-                    type="text"
-                    class="prop-input prop-input--code"
-                    @input="updateSelectedProp('key', ($event.target as HTMLInputElement).value)"
+                  <InputText
+                    :model-value="builder.selectedComponent.value.key"
+                    class="w-full font-mono text-xs"
+                    size="small"
+                    @update:model-value="updateSelectedProp('key', $event)"
                   />
                   <small class="text-xs text-slate-500 mt-1 block">
                     The name of this field in the API endpoint.
@@ -634,33 +795,37 @@ function copySchema() {
                   <h4 class="prop-section__title">Simple Conditional</h4>
                   <div class="prop-field">
                     <label class="prop-label">This component should Display:</label>
-                    <select
-                      class="prop-input"
-                      :value="builder.selectedComponent.value.conditional?.show !== false ? 'true' : 'false'"
-                      @change="updateSelectedProp('conditional', { ...builder.selectedComponent.value.conditional, show: $event.target.value === 'true' })"
-                    >
-                      <option value="true">True</option>
-                      <option value="false">False</option>
-                    </select>
+                    <Select
+                      :model-value="builder.selectedComponent.value.conditional?.show !== false ? 'true' : 'false'"
+                      :options="[
+                        { label: 'True', value: 'true' },
+                        { label: 'False', value: 'false' }
+                      ]"
+                      optionLabel="label"
+                      optionValue="value"
+                      class="w-full"
+                      size="small"
+                      @update:model-value="updateSelectedProp('conditional', { ...builder.selectedComponent.value.conditional, show: $event === 'true' })"
+                    />
                   </div>
                   <div class="prop-field">
                     <label class="prop-label">When the form component:</label>
-                    <input
-                      :value="builder.selectedComponent.value.conditional?.when ?? ''"
-                      type="text"
-                      class="prop-input prop-input--code"
+                    <InputText
+                      :model-value="builder.selectedComponent.value.conditional?.when"
+                      class="w-full font-mono text-xs"
+                      size="small"
                       placeholder="API Key of another component"
-                      @input="updateSelectedProp('conditional', { ...builder.selectedComponent.value.conditional, when: $event.target.value })"
+                      @update:model-value="updateSelectedProp('conditional', { ...builder.selectedComponent.value.conditional, when: $event })"
                     />
                   </div>
                   <div class="prop-field">
                     <label class="prop-label">Has the value:</label>
-                    <input
-                      :value="builder.selectedComponent.value.conditional?.eq ?? ''"
-                      type="text"
-                      class="prop-input"
+                    <InputText
+                      :model-value="builder.selectedComponent.value.conditional?.eq"
+                      class="w-full"
+                      size="small"
                       placeholder="Value to match"
-                      @input="updateSelectedProp('conditional', { ...builder.selectedComponent.value.conditional, eq: $event.target.value })"
+                      @update:model-value="updateSelectedProp('conditional', { ...builder.selectedComponent.value.conditional, eq: $event })"
                     />
                   </div>
                   <div class="prop-field mt-4 border-t border-slate-200 pt-4">

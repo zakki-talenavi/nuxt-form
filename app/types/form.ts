@@ -96,6 +96,21 @@ export interface FormComponentSchema {
   labelPosition?: 'top' | 'left-left' | 'left-right' | 'right-left' | 'right-right' | 'bottom'
   widget?: Record<string, unknown> | string
 
+  // Common UI states
+  autofocus?: boolean
+  disableOnInvalid?: boolean
+  modalEdit?: boolean
+  tabindex?: string | number
+
+  // Button-specific
+  action?: 'submit' | 'event' | 'custom' | 'reset' | 'oauth' | 'url'
+  theme?: 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'danger'
+  size?: 'sm' | 'md' | 'lg'
+  block?: boolean
+  leftIcon?: string
+  rightIcon?: string
+  shortcut?: string
+
   // Select-specific
   data?: SelectData
   valueProperty?: string
