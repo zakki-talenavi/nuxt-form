@@ -349,152 +349,307 @@ function copySchema() {
         </div>
 
         <div class="properties-body">
-          <!-- Label -->
-          <div class="prop-field">
-            <label class="prop-label">Label</label>
-            <input
-              :value="builder.selectedComponent.value.label"
-              type="text"
-              class="prop-input"
-              @input="updateSelectedProp('label', ($event.target as HTMLInputElement).value)"
-            />
-          </div>
+          <Accordion value="display" :activeIndex="0">
+            <!-- ─── DISPLAY TAB ─── -->
+            <AccordionPanel value="display" class="editor-panel">
+              <AccordionHeader>Display</AccordionHeader>
+              <AccordionContent>
+                <div class="prop-field mt-3">
+                  <label class="prop-label">Label</label>
+                  <input
+                    :value="builder.selectedComponent.value.label"
+                    type="text"
+                    class="prop-input"
+                    @input="updateSelectedProp('label', ($event.target as HTMLInputElement).value)"
+                  />
+                </div>
+                <div class="prop-field">
+                  <label class="prop-label">Label Position</label>
+                  <select
+                    class="prop-input"
+                    :value="builder.selectedComponent.value.labelPosition || 'top'"
+                    @change="updateSelectedProp('labelPosition', ($event.target as HTMLSelectElement).value)"
+                  >
+                    <option value="top">Top</option>
+                    <option value="bottom">Bottom</option>
+                    <option value="left-left">Left (Left-aligned)</option>
+                    <option value="left-right">Left (Right-aligned)</option>
+                    <option value="right-left">Right (Left-aligned)</option>
+                    <option value="right-right">Right (Right-aligned)</option>
+                  </select>
+                </div>
+                <div class="prop-field">
+                  <label class="prop-label">Placeholder</label>
+                  <input
+                    :value="builder.selectedComponent.value.placeholder"
+                    type="text"
+                    class="prop-input"
+                    @input="updateSelectedProp('placeholder', ($event.target as HTMLInputElement).value)"
+                  />
+                </div>
+                <div class="prop-field">
+                  <label class="prop-label">Description</label>
+                  <input
+                    :value="builder.selectedComponent.value.description"
+                    type="text"
+                    class="prop-input"
+                    @input="updateSelectedProp('description', ($event.target as HTMLInputElement).value)"
+                  />
+                </div>
+                <div class="prop-field">
+                  <label class="prop-label">Tooltip</label>
+                  <input
+                    :value="builder.selectedComponent.value.tooltip"
+                    type="text"
+                    class="prop-input"
+                    @input="updateSelectedProp('tooltip', ($event.target as HTMLInputElement).value)"
+                  />
+                </div>
+                <div class="flex-row">
+                  <div class="prop-field flex-1">
+                    <label class="prop-label">Prefix</label>
+                    <input
+                      :value="builder.selectedComponent.value.prefix"
+                      type="text"
+                      class="prop-input"
+                      @input="updateSelectedProp('prefix', ($event.target as HTMLInputElement).value)"
+                    />
+                  </div>
+                  <div class="prop-field flex-1">
+                    <label class="prop-label">Suffix</label>
+                    <input
+                      :value="builder.selectedComponent.value.suffix"
+                      type="text"
+                      class="prop-input"
+                      @input="updateSelectedProp('suffix', ($event.target as HTMLInputElement).value)"
+                    />
+                  </div>
+                </div>
+                <div class="prop-field">
+                  <label class="prop-label">Custom CSS Class</label>
+                  <input
+                    :value="builder.selectedComponent.value.customClass"
+                    type="text"
+                    class="prop-input"
+                    @input="updateSelectedProp('customClass', ($event.target as HTMLInputElement).value)"
+                  />
+                </div>
+                <div class="prop-section">
+                  <label class="prop-checkbox">
+                    <input
+                      type="checkbox"
+                      :checked="builder.selectedComponent.value.hidden ?? false"
+                      @change="updateSelectedProp('hidden', ($event.target as HTMLInputElement).checked)"
+                    />
+                    <span>Hidden</span>
+                  </label>
+                  <label class="prop-checkbox">
+                    <input
+                      type="checkbox"
+                      :checked="builder.selectedComponent.value.disabled ?? false"
+                      @change="updateSelectedProp('disabled', ($event.target as HTMLInputElement).checked)"
+                    />
+                    <span>Disabled</span>
+                  </label>
+                </div>
+              </AccordionContent>
+            </AccordionPanel>
 
-          <!-- Key -->
-          <div class="prop-field">
-            <label class="prop-label">API Key</label>
-            <input
-              :value="builder.selectedComponent.value.key"
-              type="text"
-              class="prop-input prop-input--code"
-              @input="updateSelectedProp('key', ($event.target as HTMLInputElement).value)"
-            />
-          </div>
+            <!-- ─── DATA TAB ─── -->
+            <AccordionPanel value="data" class="editor-panel">
+              <AccordionHeader>Data</AccordionHeader>
+              <AccordionContent>
+                <div class="prop-field mt-3">
+                  <label class="prop-label">Default Value</label>
+                  <input
+                    :value="builder.selectedComponent.value.defaultValue as string | number || ''"
+                    type="text"
+                    class="prop-input"
+                    @input="updateSelectedProp('defaultValue', ($event.target as HTMLInputElement).value)"
+                  />
+                </div>
+                <div class="prop-section pt-2">
+                  <label class="prop-checkbox">
+                    <input
+                      type="checkbox"
+                      :checked="builder.selectedComponent.value.multiple ?? false"
+                      @change="updateSelectedProp('multiple', ($event.target as HTMLInputElement).checked)"
+                    />
+                    <span>Multiple Values</span>
+                  </label>
+                </div>
+                <!-- Select Values Editor -->
+                <template v-if="builder.selectedComponent.value.type === 'select'">
+                  <div class="prop-section">
+                    <h4 class="prop-section__title">Options (Data Source)</h4>
+                    <div
+                      v-for="(opt, idx) in editingSelectValues"
+                      :key="idx"
+                      class="select-option-row"
+                    >
+                      <input
+                        :value="opt.label"
+                        type="text"
+                        class="prop-input"
+                        placeholder="Label"
+                        @input="updateSelectOption(idx, 'label', ($event.target as HTMLInputElement).value)"
+                      />
+                      <input
+                        :value="opt.value"
+                        type="text"
+                        class="prop-input prop-input--code"
+                        placeholder="Value"
+                        @input="updateSelectOption(idx, 'value', ($event.target as HTMLInputElement).value)"
+                      />
+                      <button
+                        class="select-option-remove"
+                        @click="removeSelectOption(idx)"
+                      >✕</button>
+                    </div>
+                    <button class="prop-btn" @click="addSelectOption">+ Add Option</button>
+                  </div>
+                </template>
+              </AccordionContent>
+            </AccordionPanel>
 
-          <!-- Placeholder -->
-          <div class="prop-field">
-            <label class="prop-label">Placeholder</label>
-            <input
-              :value="builder.selectedComponent.value.placeholder"
-              type="text"
-              class="prop-input"
-              @input="updateSelectedProp('placeholder', ($event.target as HTMLInputElement).value)"
-            />
-          </div>
+            <!-- ─── VALIDATION TAB ─── -->
+            <AccordionPanel value="validation" class="editor-panel">
+              <AccordionHeader>Validation</AccordionHeader>
+              <AccordionContent>
+                <div class="mt-3">
+                  <label class="prop-checkbox">
+                    <input
+                      type="checkbox"
+                      :checked="builder.selectedComponent.value.validate?.required ?? false"
+                      @change="updateValidation('required', ($event.target as HTMLInputElement).checked)"
+                    />
+                    <span>Required</span>
+                  </label>
+                </div>
 
-          <!-- Description -->
-          <div class="prop-field">
-            <label class="prop-label">Description</label>
-            <input
-              :value="builder.selectedComponent.value.description"
-              type="text"
-              class="prop-input"
-              @input="updateSelectedProp('description', ($event.target as HTMLInputElement).value)"
-            />
-          </div>
+                <template v-if="['textfield', 'textarea', 'email', 'password'].includes(builder.selectedComponent.value.type)">
+                  <div class="flex-row mt-3">
+                    <div class="prop-field flex-1">
+                      <label class="prop-label">Min Length</label>
+                      <input
+                        :value="builder.selectedComponent.value.validate?.minLength ?? ''"
+                        type="number"
+                        class="prop-input"
+                        min="0"
+                        @input="updateValidation('minLength', ($event.target as HTMLInputElement).value ? Number(($event.target as HTMLInputElement).value) : undefined)"
+                      />
+                    </div>
+                    <div class="prop-field flex-1">
+                      <label class="prop-label">Max Length</label>
+                      <input
+                        :value="builder.selectedComponent.value.validate?.maxLength ?? ''"
+                        type="number"
+                        class="prop-input"
+                        min="0"
+                        @input="updateValidation('maxLength', ($event.target as HTMLInputElement).value ? Number(($event.target as HTMLInputElement).value) : undefined)"
+                      />
+                    </div>
+                  </div>
+                  <div class="prop-field">
+                    <label class="prop-label">Regular Expression Pattern</label>
+                    <input
+                      :value="builder.selectedComponent.value.validate?.pattern ?? ''"
+                      type="text"
+                      class="prop-input prop-input--code"
+                      placeholder="e.g. ^[a-zA-Z0-9]+$"
+                      @input="updateValidation('pattern', ($event.target as HTMLInputElement).value || undefined)"
+                    />
+                  </div>
+                </template>
+                
+                <div class="prop-field mt-3">
+                  <label class="prop-label">Custom Error Message</label>
+                  <input
+                    :value="builder.selectedComponent.value.validate?.customMessage ?? ''"
+                    type="text"
+                    class="prop-input"
+                    placeholder="Custom validation error text"
+                    @input="updateValidation('customMessage', ($event.target as HTMLInputElement).value || undefined)"
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionPanel>
 
-          <!-- Validation -->
-          <div class="prop-section">
-            <h4 class="prop-section__title">Validation</h4>
+            <!-- ─── API TAB ─── -->
+            <AccordionPanel value="api" class="editor-panel">
+              <AccordionHeader>API</AccordionHeader>
+              <AccordionContent>
+                <div class="prop-field mt-3">
+                  <label class="prop-label">Property Name (API Key)</label>
+                  <input
+                    :value="builder.selectedComponent.value.key"
+                    type="text"
+                    class="prop-input prop-input--code"
+                    @input="updateSelectedProp('key', ($event.target as HTMLInputElement).value)"
+                  />
+                  <small class="text-xs text-slate-500 mt-1 block">
+                    The name of this field in the API endpoint.
+                  </small>
+                </div>
+              </AccordionContent>
+            </AccordionPanel>
 
-            <label class="prop-checkbox">
-              <input
-                type="checkbox"
-                :checked="builder.selectedComponent.value.validate?.required ?? false"
-                @change="updateValidation('required', ($event.target as HTMLInputElement).checked)"
-              />
-              <span>Required</span>
-            </label>
+            <!-- ─── CONDITIONAL TAB ─── -->
+            <AccordionPanel value="conditional" class="editor-panel">
+              <AccordionHeader>Conditional</AccordionHeader>
+              <AccordionContent>
+                <div class="prop-section mt-3">
+                  <h4 class="prop-section__title">Simple Conditional</h4>
+                  <div class="prop-field">
+                    <label class="prop-label">This component should Display:</label>
+                    <select
+                      class="prop-input"
+                      :value="builder.selectedComponent.value.conditional?.show !== false ? 'true' : 'false'"
+                      @change="updateSelectedProp('conditional', { ...builder.selectedComponent.value.conditional, show: $event.target.value === 'true' })"
+                    >
+                      <option value="true">True</option>
+                      <option value="false">False</option>
+                    </select>
+                  </div>
+                  <div class="prop-field">
+                    <label class="prop-label">When the form component:</label>
+                    <input
+                      :value="builder.selectedComponent.value.conditional?.when ?? ''"
+                      type="text"
+                      class="prop-input prop-input--code"
+                      placeholder="API Key of another component"
+                      @input="updateSelectedProp('conditional', { ...builder.selectedComponent.value.conditional, when: $event.target.value })"
+                    />
+                  </div>
+                  <div class="prop-field">
+                    <label class="prop-label">Has the value:</label>
+                    <input
+                      :value="builder.selectedComponent.value.conditional?.eq ?? ''"
+                      type="text"
+                      class="prop-input"
+                      placeholder="Value to match"
+                      @input="updateSelectedProp('conditional', { ...builder.selectedComponent.value.conditional, eq: $event.target.value })"
+                    />
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionPanel>
 
-            <template v-if="['textfield', 'textarea', 'email', 'password'].includes(builder.selectedComponent.value.type)">
-              <div class="prop-field">
-                <label class="prop-label">Min Length</label>
-                <input
-                  :value="builder.selectedComponent.value.validate?.minLength ?? ''"
-                  type="number"
-                  class="prop-input"
-                  min="0"
-                  @input="updateValidation('minLength', ($event.target as HTMLInputElement).value ? Number(($event.target as HTMLInputElement).value) : undefined)"
-                />
-              </div>
-              <div class="prop-field">
-                <label class="prop-label">Max Length</label>
-                <input
-                  :value="builder.selectedComponent.value.validate?.maxLength ?? ''"
-                  type="number"
-                  class="prop-input"
-                  min="0"
-                  @input="updateValidation('maxLength', ($event.target as HTMLInputElement).value ? Number(($event.target as HTMLInputElement).value) : undefined)"
-                />
-              </div>
-              <div class="prop-field">
-                <label class="prop-label">Pattern (RegEx)</label>
-                <input
-                  :value="builder.selectedComponent.value.validate?.pattern ?? ''"
-                  type="text"
-                  class="prop-input prop-input--code"
-                  @input="updateValidation('pattern', ($event.target as HTMLInputElement).value || undefined)"
-                />
-              </div>
-            </template>
-          </div>
-
-          <!-- Select Values Editor -->
-          <template v-if="builder.selectedComponent.value.type === 'select'">
-            <div class="prop-section">
-              <h4 class="prop-section__title">Options</h4>
-              <div
-                v-for="(opt, idx) in editingSelectValues"
-                :key="idx"
-                class="select-option-row"
-              >
-                <input
-                  :value="opt.label"
-                  type="text"
-                  class="prop-input"
-                  placeholder="Label"
-                  @input="updateSelectOption(idx, 'label', ($event.target as HTMLInputElement).value)"
-                />
-                <input
-                  :value="opt.value"
-                  type="text"
-                  class="prop-input prop-input--code"
-                  placeholder="Value"
-                  @input="updateSelectOption(idx, 'value', ($event.target as HTMLInputElement).value)"
-                />
-                <button
-                  class="select-option-remove"
-                  @click="removeSelectOption(idx)"
-                >
-                  ✕
-                </button>
-              </div>
-              <button class="prop-btn" @click="addSelectOption">
-                + Add Option
-              </button>
-            </div>
-          </template>
-
-          <!-- Display -->
-          <div class="prop-section">
-            <h4 class="prop-section__title">Display</h4>
-            <label class="prop-checkbox">
-              <input
-                type="checkbox"
-                :checked="builder.selectedComponent.value.hidden ?? false"
-                @change="updateSelectedProp('hidden', ($event.target as HTMLInputElement).checked)"
-              />
-              <span>Hidden</span>
-            </label>
-            <label class="prop-checkbox">
-              <input
-                type="checkbox"
-                :checked="builder.selectedComponent.value.disabled ?? false"
-                @change="updateSelectedProp('disabled', ($event.target as HTMLInputElement).checked)"
-              />
-              <span>Disabled</span>
-            </label>
-          </div>
+            <!-- ─── LOGIC TAB ─── -->
+            <AccordionPanel value="logic" class="editor-panel">
+              <AccordionHeader>Logic</AccordionHeader>
+              <AccordionContent>
+                <div class="prop-section mt-3">
+                  <p class="text-xs text-slate-500 mb-2">
+                    Advanced Logic configuration using JSONLogic is active for this form, but the builder UI for complex nested logic objects is not yet fully implemented in this MVP.
+                  </p>
+                  <p class="text-xs text-slate-500">
+                    Use the JSON Panel to edit the `logic` property manually.
+                  </p>
+                </div>
+              </AccordionContent>
+            </AccordionPanel>
+          </Accordion>
         </div>
       </aside>
 
@@ -840,11 +995,12 @@ function copySchema() {
 
 /* ─── Properties Panel ─────────────────────────────────────── */
 .builder-properties {
-  width: 280px;
+  width: 380px;
   flex-shrink: 0;
   background: var(--builder-sidebar-bg);
   border-left: 1px solid var(--builder-border);
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .properties-header {
@@ -853,6 +1009,58 @@ function copySchema() {
   justify-content: space-between;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--builder-border);
+  flex-shrink: 0;
+}
+
+.properties-body {
+  flex: 1;
+  overflow-y: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.p-accordion) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--builder-sidebar-bg);
+}
+
+:deep(.p-accordionpanel) {
+  border: none !important;
+  border-bottom: 1px solid var(--builder-border) !important;
+}
+
+:deep(.p-accordionheader) {
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--builder-text);
+  background: var(--builder-sidebar-bg); /* Clean white background */
+  border: none !important;
+  transition: all 0.2s ease;
+}
+
+:deep(.p-accordionheader:hover) {
+  background: #f8fafc; /* Subtle gray on hover */
+  color: var(--builder-primary);
+}
+
+:deep(.p-accordionpanel:first-child) {
+  border-top: none !important; /* Let the main header handle the top border */
+}
+
+:deep(.p-accordionheader-active) {
+  border-bottom: 1px solid var(--builder-border) !important;
+  background: #fafaf9; /* Very slight off-white for active */
+  color: var(--builder-primary);
+}
+
+:deep(.p-accordioncontent-content) {
+  padding: 1rem;
+  background: var(--builder-sidebar-bg);
+  border: none !important;
 }
 
 .properties-title {

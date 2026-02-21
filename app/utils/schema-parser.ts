@@ -11,8 +11,9 @@ import type {
   FormSchema,
   FormComponentSchema,
   FormSubmission,
-   FormValidation,
+  FormValidation,
   FieldValue,
+  ValidationError,
 } from '../types/form'
 import jsonLogicLib from 'json-logic-js'
 const jsonLogic = (jsonLogicLib as any).default || jsonLogicLib
@@ -79,6 +80,10 @@ export function normalizeComponent(raw: unknown): FormComponentSchema {
     leftIcon: comp.leftIcon as string | undefined,
     rightIcon: comp.rightIcon as string | undefined,
     disableOnInvalid: comp.disableOnInvalid as boolean | undefined,
+    prefix: comp.prefix as string | undefined,
+    suffix: comp.suffix as string | undefined,
+    labelPosition: comp.labelPosition as 'top' | 'left-left' | 'left-right' | 'right-left' | 'right-right' | 'bottom' | undefined,
+    widget: comp.widget as Record<string, unknown> | string | undefined,
   }
 
   // Recursively normalize nested components

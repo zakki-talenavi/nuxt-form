@@ -90,6 +90,10 @@ export interface FormComponentSchema {
   logic?: FormComponentLogic[]
   customClass?: string
   properties?: Record<string, unknown>
+  prefix?: string
+  suffix?: string
+  labelPosition?: 'top' | 'left-left' | 'left-right' | 'right-left' | 'right-right' | 'bottom'
+  widget?: Record<string, unknown> | string
 
   // Select-specific
   data?: SelectData
