@@ -138,7 +138,34 @@ const demoSchema = ref<FormSchema>({
           html: '<p>This is a <strong>Tiptap</strong> powered <em>rich-text editor</em>. Try editing me!</p>' 
         },
         { type: 'recaptcha', key: 'captcha', label: 'reCAPTCHA Verification', input: false },
+        {
+          type: 'tree', key: 'categoryTree', label: 'Product Categories (Tree)', input: true,
+          components: [
+            { type: 'textfield', key: 'categoryName', label: 'Category Name', input: true, placeholder: 'e.g. Electronics' },
+            { type: 'checkbox', key: 'isActive', label: 'Is Active?', input: true }
+          ]
+        },
       ],
+    },
+    {
+       type: 'well', key: 'logicWell', label: 'Advanced Logic Engine Demo', input: false,
+       components: [
+         { type: 'content', key: 'logicDesc', label: '', input: false, html: '<p class="text-sm text-gray-500 mb-4">The following fields demonstrate JSONLogic dynamically overriding component properties without mutating the blueprint.</p>' },
+         { type: 'checkbox', key: 'applyLogic', label: 'Click to unlock the next field!', input: true },
+         {
+           type: 'textfield', key: 'superpower', label: 'Locked Field', input: true, disabled: true, placeholder: 'Will be unlocked via logic...',
+           logic: [
+             {
+               name: 'Unlock Logic',
+               trigger: { type: 'json', json: { "==": [{ "var": "data.applyLogic" }, true] } },
+               actions: [
+                 { name: 'Enable', type: 'property', property: { value: 'disabled', label: '', type: '' }, state: false },
+                 { name: 'Rename', type: 'property', property: { value: 'label', label: '', type: '' }, state: 'Unlocked Superpower Field!' }
+               ]
+             }
+           ]
+         }
+       ]
     },
     { type: 'hidden', key: 'formVersion', label: 'Form Version', input: true, defaultValue: '2.0.0' },
     { type: 'button', key: 'submit', label: 'Submit Application', input: false, action: 'submit', theme: 'primary', block: true },

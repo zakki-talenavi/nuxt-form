@@ -36,6 +36,27 @@ export interface FormConditional {
   json?: Record<string, unknown>
 }
 
+// ─── Advanced Logic ────────────────────────────────────────────
+export interface FormLogicAction {
+  name: string
+  type: 'property' | 'value' | 'mergeComponentSchema' | 'customAction'
+  property?: { label: string; value: string; type: string }
+  state?: boolean | string | number
+  text?: string
+  value?: string
+}
+
+export interface FormComponentLogic {
+  name: string
+  trigger: {
+    type: 'json' | 'javascript' | 'simple' | 'event'
+    json?: Record<string, unknown>
+    javascript?: string
+    simple?: { show: boolean; when: string; eq: string }
+  }
+  actions: FormLogicAction[]
+}
+
 // ─── Select Data Source ────────────────────────────────────────
 export interface SelectValue {
   label: string
@@ -66,6 +87,7 @@ export interface FormComponentSchema {
   defaultValue?: unknown
   validate?: FormValidation
   conditional?: FormConditional
+  logic?: FormComponentLogic[]
   customClass?: string
   properties?: Record<string, unknown>
 

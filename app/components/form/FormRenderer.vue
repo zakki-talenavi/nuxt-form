@@ -72,6 +72,7 @@ import SurveyField from './fields/SurveyField.vue'
 import AddressField from './fields/AddressField.vue'
 import FormField from './fields/FormField.vue'
 import RecaptchaField from './fields/RecaptchaField.vue'
+import TreeField from './fields/TreeField.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -305,13 +306,18 @@ registry.register('form', FormField, {
   schema: { type: 'form', key: 'form', label: 'Nested Form', input: true, components: [] },
 }, {})
 
+registry.register('tree', TreeField, {
+  title: 'Tree', icon: '🌳', group: 'advanced', weight: 118,
+  schema: { type: 'tree', key: 'tree', label: 'Tree', input: true, components: [] },
+}, {})
+
 registry.register('recaptcha', RecaptchaField, {
   title: 'reCAPTCHA', icon: '🔒', group: 'advanced', weight: 120,
   schema: { type: 'recaptcha', key: 'recaptcha', label: 'reCAPTCHA', input: false },
 }, {})
 
 // ─── Layout types that contain nested components ─────────────
-const layoutTypes = new Set(['columns', 'fieldset', 'panel', 'well', 'table', 'tabs', 'container'])
+const layoutTypes = new Set(['columns', 'fieldset', 'panel', 'well', 'table', 'tabs', 'container', 'tree'])
 
 // ─── Form Renderer Composable ────────────────────────────────
 const form = useFormRenderer(props.schema, {
@@ -449,10 +455,10 @@ defineExpose({
         <component
           v-if="registry.getComponent(childComp.type) && isLayoutComponent(childComp.type)"
           :is="registry.getComponent(childComp.type)"
-          :component="childComp"
+          :component="form.getOverriddenComponent(childComp)"
           :model-value="form.formData[childComp.key]"
           :errors="form.showErrors ? form.getFieldErrors(childComp.key) : []"
-          :disabled="disabled || childComp.disabled || false"
+          :disabled="disabled || form.getOverriddenComponent(childComp).disabled || false"
           :read-only="readOnly"
           @update:model-value="(val: unknown) => handleFieldUpdate(childComp.key, val)"
           @blur="handleFieldBlur"
@@ -461,10 +467,10 @@ defineExpose({
             <component
               v-if="registry.getComponent(nestedComp.type)"
               :is="registry.getComponent(nestedComp.type)"
-              :component="nestedComp"
+              :component="form.getOverriddenComponent(nestedComp)"
               :model-value="form.formData[nestedComp.key]"
               :errors="form.showErrors ? form.getFieldErrors(nestedComp.key) : []"
-              :disabled="disabled || nestedComp.disabled || false"
+              :disabled="disabled || form.getOverriddenComponent(nestedComp).disabled || false"
               :read-only="readOnly"
               @update:model-value="(val: unknown) => handleFieldUpdate(nestedComp.key, val)"
               @blur="handleFieldBlur"
@@ -474,10 +480,10 @@ defineExpose({
         <component
           v-else-if="registry.getComponent(childComp.type)"
           :is="registry.getComponent(childComp.type)"
-          :component="childComp"
+          :component="form.getOverriddenComponent(childComp)"
           :model-value="form.formData[childComp.key]"
           :errors="form.showErrors ? form.getFieldErrors(childComp.key) : []"
-          :disabled="disabled || childComp.disabled || false"
+          :disabled="disabled || form.getOverriddenComponent(childComp).disabled || false"
           :read-only="readOnly"
           @update:model-value="(val: unknown) => handleFieldUpdate(childComp.key, val)"
           @blur="handleFieldBlur"
@@ -492,10 +498,10 @@ defineExpose({
         <component
           v-if="form.isComponentVisible(comp) && registry.getComponent(comp.type) && isLayoutComponent(comp.type)"
           :is="registry.getComponent(comp.type)"
-          :component="comp"
+          :component="form.getOverriddenComponent(comp)"
           :model-value="form.formData[comp.key]"
           :errors="form.showErrors ? form.getFieldErrors(comp.key) : []"
-          :disabled="disabled || comp.disabled || false"
+          :disabled="disabled || form.getOverriddenComponent(comp).disabled || false"
           :read-only="readOnly"
           @update:model-value="(val: unknown) => handleFieldUpdate(comp.key, val)"
           @blur="handleFieldBlur"
@@ -504,10 +510,10 @@ defineExpose({
             <component
               v-if="registry.getComponent(childComp.type)"
               :is="registry.getComponent(childComp.type)"
-              :component="childComp"
+              :component="form.getOverriddenComponent(childComp)"
               :model-value="form.formData[childComp.key]"
               :errors="form.showErrors ? form.getFieldErrors(childComp.key) : []"
-              :disabled="disabled || childComp.disabled || false"
+              :disabled="disabled || form.getOverriddenComponent(childComp).disabled || false"
               :read-only="readOnly"
               @update:model-value="(val: unknown) => handleFieldUpdate(childComp.key, val)"
               @blur="handleFieldBlur"
@@ -519,10 +525,10 @@ defineExpose({
         <component
           v-else-if="form.isComponentVisible(comp) && registry.getComponent(comp.type)"
           :is="registry.getComponent(comp.type)"
-          :component="comp"
+          :component="form.getOverriddenComponent(comp)"
           :model-value="form.formData[comp.key]"
           :errors="form.showErrors ? form.getFieldErrors(comp.key) : []"
-          :disabled="disabled || comp.disabled || false"
+          :disabled="disabled || form.getOverriddenComponent(comp).disabled || false"
           :read-only="readOnly"
           @update:model-value="(val: unknown) => handleFieldUpdate(comp.key, val)"
           @blur="handleFieldBlur"

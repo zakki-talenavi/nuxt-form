@@ -11,10 +11,11 @@ import type {
   FormSchema,
   FormComponentSchema,
   FormSubmission,
-  ValidationError,
-  FormValidation,
+   FormValidation,
   FieldValue,
 } from '../types/form'
+import jsonLogicLib from 'json-logic-js'
+const jsonLogic = (jsonLogicLib as any).default || jsonLogicLib
 
 /**
  * Parse and validate a form schema.
@@ -71,6 +72,13 @@ export function normalizeComponent(raw: unknown): FormComponentSchema {
     valueProperty: comp.valueProperty as string | undefined,
     template: comp.template as string | undefined,
     properties: comp.properties as Record<string, unknown> | undefined,
+    logic: comp.logic as any,
+    action: comp.action as string | undefined,
+    theme: comp.theme as string | undefined,
+    block: comp.block as boolean | undefined,
+    leftIcon: comp.leftIcon as string | undefined,
+    rightIcon: comp.rightIcon as string | undefined,
+    disableOnInvalid: comp.disableOnInvalid as boolean | undefined,
   }
 
   // Recursively normalize nested components
@@ -254,58 +262,20 @@ function evaluateCustomValidation(
 }
 
 /**
- * Evaluate a simple JSON Logic rule.
- * Supports basic operators: ==, ===, !=, !==, >, >=, <, <=, in, and, or, not, !, !!
- * For production, use a full JSON Logic library.
+ * Evaluate a JSON Logic rule using the official json-logic-js library.
  */
 function evaluateJsonLogic(
   rule: Record<string, unknown>,
   data: Record<string, unknown>,
 ): boolean {
   try {
-    const keys = Object.keys(rule)
-    if (keys.length === 0) return true
-    const op: string = keys[0] as string
-    const args = rule[op] as unknown[]
-
-    const resolveValue = (v: unknown): unknown => {
-      if (v && typeof v === 'object' && 'var' in (v as Record<string, unknown>)) {
-        const key = (v as Record<string, string>).var
-        return key === '' ? data : data[key]
-      }
-      if (v && typeof v === 'object' && !Array.isArray(v)) {
-        return evaluateJsonLogic(v as Record<string, unknown>, data)
-      }
-      return v
-    }
-
-    switch (op) {
-      case '==':  return resolveValue(args[0]) == resolveValue(args[1])
-      case '===': return resolveValue(args[0]) === resolveValue(args[1])
-      case '!=':  return resolveValue(args[0]) != resolveValue(args[1])
-      case '!==': return resolveValue(args[0]) !== resolveValue(args[1])
-      case '>':   return Number(resolveValue(args[0])) > Number(resolveValue(args[1]))
-      case '>=':  return Number(resolveValue(args[0])) >= Number(resolveValue(args[1]))
-      case '<':   return Number(resolveValue(args[0])) < Number(resolveValue(args[1]))
-      case '<=':  return Number(resolveValue(args[0])) <= Number(resolveValue(args[1]))
-      case '!':   return !resolveValue(args[0])
-      case '!!':  return !!resolveValue(args[0])
-      case 'and': return (args as unknown[]).every(a => evaluateJsonLogic(a as Record<string, unknown>, data))
-      case 'or':  return (args as unknown[]).some(a => evaluateJsonLogic(a as Record<string, unknown>, data))
-      case 'not': return !evaluateJsonLogic(args[0] as Record<string, unknown>, data)
-      case 'in': {
-        const needle = resolveValue(args[0])
-        const haystack = resolveValue(args[1])
-        if (typeof haystack === 'string') return (haystack as string).includes(String(needle))
-        if (Array.isArray(haystack)) return haystack.includes(needle)
-        return false
-      }
-      default: return true
-    }
-  } catch {
-    return true
+    return !!jsonLogic.apply(rule, data)
+  } catch (err) {
+    console.error('JSON Logic Evaluation Error:', err)
+    return false
   }
 }
+
 
 /**
  * Validate a single field value against its component schema.

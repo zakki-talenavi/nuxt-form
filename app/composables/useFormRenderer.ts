@@ -28,6 +28,7 @@ import {
   evaluateConditional,
   createEmptySubmission,
 } from '../utils/schema-parser'
+import { useAdvancedLogic } from './useAdvancedLogic'
 
 export function useFormRenderer(
   initialSchema?: FormSchema,
@@ -84,6 +85,8 @@ export function useFormRenderer(
     },
     state: 'submitted',
   }))
+
+  const { componentOverrides } = useAdvancedLogic(() => getCachedComponents(), formData)
 
   // ─── Methods ───────────────────────────────────────────────
 
@@ -216,10 +219,20 @@ export function useFormRenderer(
   }
 
   /**
-   * Check if a component should be visible based on conditional logic.
+   * Check if a component should be visible based on conditional logic and advanced overrides.
    */
   function isComponentVisible(component: FormComponentSchema): boolean {
-    return evaluateConditional(component, formData)
+    const overridden = getOverriddenComponent(component)
+    return evaluateConditional(overridden, formData)
+  }
+
+  /**
+   * Get a component with its advanced logic properties applied.
+   */
+  function getOverriddenComponent(component: FormComponentSchema): FormComponentSchema {
+    const overrides = componentOverrides.value.get(component.key)
+    if (!overrides) return component
+    return { ...component, ...overrides } as FormComponentSchema
   }
 
   /**
@@ -280,6 +293,7 @@ export function useFormRenderer(
     showErrors,
     submission,
     allComponents,
+    componentOverrides,
 
     // Methods
     setSchema,
@@ -291,6 +305,7 @@ export function useFormRenderer(
     validateAll,
     getFieldErrors,
     isComponentVisible,
+    getOverriddenComponent,
     submitForm,
     handleFieldBlur,
   }
