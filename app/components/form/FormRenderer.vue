@@ -14,7 +14,7 @@
  * Usage:
  * <FormRenderer :schema="mySchema" v-model="formData" @submit="handleSubmit" />
  */
-import { watch, provide, computed } from 'vue'
+import { watch, provide, computed, nextTick } from 'vue'
 import type { FormSchema, FormSubmission, FormComponentSchema, ValidationError } from '../../types/form'
 import { useFormRenderer } from '../../composables/useFormRenderer'
 import { useComponentRegistry } from '../../composables/useComponentRegistry'
@@ -324,19 +324,36 @@ const form = useFormRenderer(props.schema, {
 provide('formRenderer', form)
 provide('componentRegistry', registry)
 
-// ─── Watch for schema changes ────────────────────────────────
+// ─── Performance: debounced emit helper ──────────────────────
+let _emitTimer: ReturnType<typeof setTimeout> | null = null
+let _isInternalUpdate = false // guard to break bidirectional loop
+
+function debouncedEmit() {
+  if (_emitTimer) clearTimeout(_emitTimer)
+  _emitTimer = setTimeout(() => {
+    _isInternalUpdate = true
+    const snapshot = { ...form.formData }
+    emit('update:modelValue', snapshot)
+    emit('change', snapshot)
+    // Reset guard on next tick to allow future external updates
+    nextTick(() => { _isInternalUpdate = false })
+  }, 60) // 60ms — fast enough to feel instant, slow enough to batch rapid keystrokes
+}
+
+// ─── Watch for schema changes (shallow — not deep) ───────────
 watch(
   () => props.schema,
   (newSchema) => {
     form.setSchema(newSchema)
   },
-  { deep: true },
 )
 
-// ─── Watch for external modelValue changes ───────────────────
+// ─── Watch for external modelValue changes (guarded) ─────────
 watch(
   () => props.modelValue,
   (newVal) => {
+    // Guard: skip when the change came from our own emit (breaks the loop)
+    if (_isInternalUpdate) return
     if (newVal) {
       form.setSubmission({ data: newVal })
     }
@@ -344,12 +361,11 @@ watch(
   { deep: true },
 )
 
-// ─── Sync formData changes back to parent ────────────────────
+// ─── Sync formData changes back to parent (debounced) ────────
 watch(
   () => form.formData,
-  (data) => {
-    emit('update:modelValue', { ...data })
-    emit('change', { ...data })
+  () => {
+    debouncedEmit()
   },
   { deep: true },
 )
@@ -358,6 +374,7 @@ watch(
 function handleFieldUpdate(key: string, value: unknown) {
   form.setFieldValue(key, value)
   emit('fieldChange', { key, value })
+  // The debounced watcher above handles update:modelValue
 }
 
 function handleFieldBlur(key: string) {
@@ -365,6 +382,16 @@ function handleFieldBlur(key: string) {
 }
 
 async function handleSubmit() {
+  // Flush any pending debounced emit before submitting
+  if (_emitTimer) {
+    clearTimeout(_emitTimer)
+    _emitTimer = null
+  }
+  _isInternalUpdate = true
+  emit('update:modelValue', { ...form.formData })
+  await nextTick()
+  _isInternalUpdate = false
+
   const result = await form.submitForm()
 
   if (result.success && result.submission) {
@@ -376,8 +403,10 @@ async function handleSubmit() {
 
 function handleReset() {
   form.resetData()
+  _isInternalUpdate = true
   emit('update:modelValue', { ...form.formData })
   emit('change', { ...form.formData })
+  nextTick(() => { _isInternalUpdate = false })
 }
 
 function isLayoutComponent(type: string): boolean {

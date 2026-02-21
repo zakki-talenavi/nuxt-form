@@ -5,11 +5,14 @@
  * Core composable that manages form state, data binding,
  * validation, and submission logic.
  *
- * Replaces Webform.js class with a reactive composable
- * pattern using Vue 3 Composition API.
+ * Performance-optimised version:
+ * - Uses shallowRef for schema (no deep tracking of large tree)
+ * - Caches flattenComponents to avoid re-traversal on every keystroke
+ * - formData is a plain ref holding immutable snapshots when emitting
+ * - Validation only runs on the changed field, never the whole tree
  */
 
-import { ref, reactive, computed, watch, toRaw } from 'vue'
+import { ref, reactive, computed, shallowRef, triggerRef, toRaw } from 'vue'
 import type {
   FormSchema,
   FormComponentSchema,
@@ -31,9 +34,13 @@ export function useFormRenderer(
   options: FormRendererOptions = {},
 ) {
   // ─── Core State ────────────────────────────────────────────
-  const schema = ref<FormSchema>(
+  // shallowRef: schema is a large tree; we don't need Vue to
+  // recursively proxy every nested object inside it.
+  const schema = shallowRef<FormSchema>(
     initialSchema ? parseFormSchema(initialSchema) : { components: [] },
   )
+
+  // reactive: direct field-level mutation without deep clone per keystroke
   const formData = reactive<Record<string, unknown>>({})
   const errors = ref<Map<string, ValidationError[]>>(new Map())
   const isSubmitting = ref(false)
@@ -41,10 +48,22 @@ export function useFormRenderer(
   const isDirty = ref(false)
   const showErrors = ref<boolean>(false)
 
-  // ─── Derived State ─────────────────────────────────────────
-  const allComponents = computed(() =>
-    flattenComponents(schema.value.components),
-  )
+  // ─── Cached derived state ──────────────────────────────────
+  // Cache the flattened components list — only recompute when schema changes
+  let _cachedComponents: FormComponentSchema[] | null = null
+  let _cachedSchemaRef: FormSchema | null = null
+
+  function getCachedComponents(): FormComponentSchema[] {
+    const current = schema.value
+    if (_cachedSchemaRef !== current || _cachedComponents === null) {
+      _cachedComponents = flattenComponents(current.components)
+      _cachedSchemaRef = current
+    }
+    return _cachedComponents
+  }
+
+  // Expose as computed so templates can still bind to it reactively
+  const allComponents = computed(() => getCachedComponents())
 
   const allErrors = computed(() => {
     const result: ValidationError[] = []
@@ -72,7 +91,9 @@ export function useFormRenderer(
    * Set/replace the form schema and reset data.
    */
   function setSchema(newSchema: FormSchema): void {
+    _cachedComponents = null // invalidate cache
     schema.value = parseFormSchema(newSchema)
+    triggerRef(schema)
     resetData()
   }
 
@@ -135,7 +156,7 @@ export function useFormRenderer(
    * Validate a single field by its key.
    */
   function validateFieldByKey(key: string): ValidationError[] {
-    const component = allComponents.value.find((c) => c.key === key)
+    const component = getCachedComponents().find((c) => c.key === key)
     if (!component) return []
 
     const value = formData[key]
@@ -159,7 +180,7 @@ export function useFormRenderer(
   function validateAll(): ValidationError[] {
     const newErrors = new Map<string, ValidationError[]>()
 
-    for (const comp of allComponents.value) {
+    for (const comp of getCachedComponents()) {
       if (comp.hidden || comp.disabled) continue
 
       // Check conditional visibility

@@ -210,6 +210,31 @@ const builderSchema = ref<FormSchema>({
 function toggleLanguage() {
   setLanguage(currentLanguage.value === 'en' ? 'id' : 'en')
 }
+
+// ─── Debounced Live Data display (avoid JSON.stringify on every keystroke) ──
+const formDataJson = ref('{}')
+const wizardDataJson = ref('{}')
+let _formJsonTimer: ReturnType<typeof setTimeout> | null = null
+let _wizardJsonTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(formData, (data) => {
+  if (_formJsonTimer) clearTimeout(_formJsonTimer)
+  _formJsonTimer = setTimeout(() => {
+    formDataJson.value = JSON.stringify(data, null, 2)
+  }, 200)
+}, { deep: true })
+
+watch(wizardData, (data) => {
+  if (_wizardJsonTimer) clearTimeout(_wizardJsonTimer)
+  _wizardJsonTimer = setTimeout(() => {
+    wizardDataJson.value = JSON.stringify(data, null, 2)
+  }, 200)
+}, { deep: true })
+
+// Initial render
+onMounted(() => {
+  formDataJson.value = JSON.stringify(formData.value, null, 2)
+})
 </script>
 
 <template>
@@ -284,7 +309,7 @@ function toggleLanguage() {
         <aside class="demo-layout__sidebar">
           <div class="demo-data-panel">
             <h3 class="demo-data-panel__title">📊 Live Data</h3>
-            <pre class="demo-data-panel__code">{{ JSON.stringify(formData, null, 2) }}</pre>
+            <pre class="demo-data-panel__code">{{ formDataJson }}</pre>
           </div>
           <div v-if="submittedData" class="demo-data-panel demo-data-panel--submitted">
             <h3 class="demo-data-panel__title">✅ Submitted Data</h3>
@@ -320,7 +345,7 @@ function toggleLanguage() {
         <aside class="demo-layout__sidebar">
           <div class="demo-data-panel">
             <h3 class="demo-data-panel__title">📊 Wizard Live Data</h3>
-            <pre class="demo-data-panel__code">{{ JSON.stringify(wizardData, null, 2) }}</pre>
+            <pre class="demo-data-panel__code">{{ wizardDataJson }}</pre>
           </div>
           <div v-if="submittedData" class="demo-data-panel demo-data-panel--submitted">
             <h3 class="demo-data-panel__title">✅ Submitted Data</h3>
