@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CodeEditor from './CodeEditor.vue'
 /**
  * ========================================
  * FormBuilder Component (MVP)
@@ -224,25 +225,32 @@ function copySchema() {
       <!-- ─── Sidebar: Component Palette ──────────────────── -->
       <aside v-if="!builder.isPreviewMode.value" class="builder-sidebar">
         <h3 class="sidebar-title">Components</h3>
-        <div
-          v-for="(components, group) in builder.builderGroups.value"
-          :key="group"
-          class="sidebar-group"
-        >
-          <h4 class="sidebar-group__title">{{ String(group).charAt(0).toUpperCase() + String(group).slice(1) }}</h4>
-          <div class="sidebar-components">
-            <div
-              v-for="comp in components"
-              :key="comp.schema.type"
-              class="sidebar-component"
-              draggable="true"
-              @dragstart="handleDragStartPalette(comp.schema.type as string, $event)"
-            >
-              <span class="sidebar-component__icon">{{ comp.icon }}</span>
-              <span class="sidebar-component__label">{{ comp.title }}</span>
-            </div>
-          </div>
-        </div>
+        <Accordion :multiple="true" :value="Object.keys(builder.builderGroups.value)">
+          <AccordionPanel
+            v-for="(components, group) in builder.builderGroups.value"
+            :key="group"
+            :value="String(group)"
+            class="sidebar-group-panel"
+          >
+            <AccordionHeader class="sidebar-group-header">
+              {{ String(group).charAt(0).toUpperCase() + String(group).slice(1) }}
+            </AccordionHeader>
+            <AccordionContent>
+              <div class="sidebar-components">
+                <div
+                  v-for="comp in components"
+                  :key="comp.schema.type"
+                  class="sidebar-component"
+                  draggable="true"
+                  @dragstart="handleDragStartPalette(comp.schema.type as string, $event)"
+                >
+                  <span class="sidebar-component__icon">{{ comp.icon }}</span>
+                  <span class="sidebar-component__label">{{ comp.title }}</span>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionPanel>
+        </Accordion>
       </aside>
 
       <!-- ─── Canvas: Form Preview ────────────────────────── -->
@@ -425,13 +433,15 @@ function copySchema() {
                     />
                   </div>
                 </div>
-                <div class="prop-field">
-                  <label class="prop-label">Custom CSS Class</label>
-                  <input
-                    :value="builder.selectedComponent.value.customClass"
-                    type="text"
-                    class="prop-input"
-                    @input="updateSelectedProp('customClass', ($event.target as HTMLInputElement).value)"
+                <div class="prop-field mt-3">
+                  <CodeEditor
+                    :model-value="builder.selectedComponent.value.customClass"
+                    mode="css"
+                    label="Custom CSS Class"
+                    tooltip="Custom CSS classes to apply to this component"
+                    placeholder="btn btn-primary custom-field ..."
+                    height="60px"
+                    @change="updateSelectedProp('customClass', $event)"
                   />
                 </div>
                 <div class="prop-section">
@@ -477,6 +487,17 @@ function copySchema() {
                     />
                     <span>Multiple Values</span>
                   </label>
+                </div>
+                <div class="prop-field mt-3">
+                  <CodeEditor
+                    :model-value="builder.selectedComponent.value.calculateValue"
+                    mode="javascript"
+                    label="Calculated Value"
+                    tooltip="Use JavaScript to calculate this component's value based on other fields. You can access other fields via the 'data' object."
+                    placeholder="value = data.field1 + data.field2;"
+                    height="120px"
+                    @change="updateSelectedProp('calculateValue', $event)"
+                  />
                 </div>
                 <!-- Select Values Editor -->
                 <template v-if="builder.selectedComponent.value.type === 'select'">
@@ -563,6 +584,17 @@ function copySchema() {
                 </template>
                 
                 <div class="prop-field mt-3">
+                  <CodeEditor
+                    :model-value="builder.selectedComponent.value.validate?.custom"
+                    mode="javascript"
+                    label="Custom Validation Logic"
+                    tooltip="Write custom validation logic. Return 'true' if valid, or a string error message. Accessible variables: input, data."
+                    placeholder="valid = (input === 'secret') ? true : 'Invalid password';"
+                    height="120px"
+                    @change="updateValidation('custom', $event)"
+                  />
+                </div>
+                <div class="prop-field mt-3">
                   <label class="prop-label">Custom Error Message</label>
                   <input
                     :value="builder.selectedComponent.value.validate?.customMessage ?? ''"
@@ -629,6 +661,18 @@ function copySchema() {
                       class="prop-input"
                       placeholder="Value to match"
                       @input="updateSelectedProp('conditional', { ...builder.selectedComponent.value.conditional, eq: $event.target.value })"
+                    />
+                  </div>
+                  <div class="prop-field mt-4 border-t border-slate-200 pt-4">
+                    <h4 class="prop-section__title">Advanced Logic</h4>
+                    <CodeEditor
+                      :model-value="builder.selectedComponent.value.conditional?.javascript"
+                      mode="javascript"
+                      label="Custom Conditional Logic"
+                      tooltip="Write custom javascript logic to determine if this component should be displayed. Set 'show' to true or false. Accessible variables: data, row."
+                      placeholder="show = (data.firstName === 'John');"
+                      height="120px"
+                      @change="updateSelectedProp('conditional', { ...builder.selectedComponent.value.conditional, javascript: $event })"
                     />
                   </div>
                 </div>
@@ -1019,7 +1063,8 @@ function copySchema() {
   flex-direction: column;
 }
 
-:deep(.p-accordion) {
+/* ─── Properties Accordion Overrides ─── */
+.builder-properties :deep(.p-accordion) {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -1027,39 +1072,71 @@ function copySchema() {
   background: var(--builder-sidebar-bg);
 }
 
-:deep(.p-accordionpanel) {
+.builder-properties :deep(.p-accordionpanel) {
   border: none !important;
   border-bottom: 1px solid var(--builder-border) !important;
 }
 
-:deep(.p-accordionheader) {
+.builder-properties :deep(.p-accordionheader) {
   padding: 0.75rem 1rem;
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--builder-text);
-  background: var(--builder-sidebar-bg); /* Clean white background */
+  background: var(--builder-sidebar-bg);
   border: none !important;
   transition: all 0.2s ease;
 }
 
-:deep(.p-accordionheader:hover) {
-  background: #f8fafc; /* Subtle gray on hover */
+.builder-properties :deep(.p-accordionheader:hover) {
+  background: #f8fafc;
   color: var(--builder-primary);
 }
 
-:deep(.p-accordionpanel:first-child) {
-  border-top: none !important; /* Let the main header handle the top border */
+.builder-properties :deep(.p-accordionpanel:first-child) {
+  border-top: none !important;
 }
 
-:deep(.p-accordionheader-active) {
+.builder-properties :deep(.p-accordionheader-active) {
   border-bottom: 1px solid var(--builder-border) !important;
-  background: #fafaf9; /* Very slight off-white for active */
+  background: #fafaf9;
   color: var(--builder-primary);
 }
 
-:deep(.p-accordioncontent-content) {
+.builder-properties :deep(.p-accordioncontent-content) {
   padding: 1rem;
   background: var(--builder-sidebar-bg);
+  border: none !important;
+}
+
+/* ─── Sidebar Accordion Overrides ─── */
+.builder-sidebar :deep(.p-accordionpanel) {
+  border: none !important;
+  margin-bottom: 0.75rem;
+}
+
+.builder-sidebar :deep(.p-accordionheader) {
+  padding: 0;
+  background: transparent;
+  border: none !important;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--builder-text-muted);
+}
+
+.builder-sidebar :deep(.p-accordionheader:hover) {
+  color: var(--builder-primary);
+  background: transparent;
+}
+
+.builder-sidebar :deep(.p-accordionheader-toggle-icon) {
+  display: none !important; /* Hide the arrow icon */
+}
+
+.builder-sidebar :deep(.p-accordioncontent-content) {
+  padding: 0.5rem 0 0 0;
+  background: transparent;
   border: none !important;
 }
 

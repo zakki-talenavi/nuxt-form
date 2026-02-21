@@ -34,6 +34,7 @@ export interface FormConditional {
   when?: string
   eq?: string | number | boolean
   json?: Record<string, unknown>
+  javascript?: string
 }
 
 // ─── Advanced Logic ────────────────────────────────────────────
