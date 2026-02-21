@@ -133,6 +133,10 @@ const demoSchema = ref<FormSchema>({
             { type: 'textfield', key: 'ec_relation', label: 'Relationship', placeholder: 'Spouse, Parent, etc.', input: true },
           ],
         },
+        { 
+          type: 'content', key: 'richNotes', label: 'Rich Text Notes (WYSIWYG)', input: true, 
+          html: '<p>This is a <strong>Tiptap</strong> powered <em>rich-text editor</em>. Try editing me!</p>' 
+        },
         { type: 'recaptcha', key: 'captcha', label: 'reCAPTCHA Verification', input: false },
       ],
     },

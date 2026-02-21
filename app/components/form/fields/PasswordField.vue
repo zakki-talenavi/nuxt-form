@@ -20,6 +20,11 @@ const emit = defineEmits<{
 
 const hasErrors = computed(() => props.errors.length > 0)
 
+const inputValue = computed({
+  get: () => (props.modelValue as string) || '',
+  set: (val: string) => emit('update:modelValue', val),
+})
+
 function handleBlur() {
   emit('blur', props.component.key)
 }
