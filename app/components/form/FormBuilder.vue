@@ -158,6 +158,23 @@ function updateColumnProp(index: number, prop: string, val: any) {
 function copySchema() {
   navigator.clipboard.writeText(jsonOutput.value)
 }
+
+// ─── Component Type Checks ───────────────────────────────────
+// Hide Data, Validation, and standard API tabs for structural/layout components
+const NON_DATA_COMPONENTS = ['columns', 'panel', 'fieldset', 'container', 'well', 'button', 'htmlelement', 'content']
+
+const hasDataTab = computed(() => {
+  const comp = builder.selectedComponent.value
+  if (!comp) return false
+  return !NON_DATA_COMPONENTS.includes(comp.type)
+})
+
+const hasValidationTab = computed(() => {
+  const comp = builder.selectedComponent.value
+  if (!comp) return false
+  return !NON_DATA_COMPONENTS.includes(comp.type) && comp.type !== 'hidden'
+})
+
 </script>
 
 <template>
@@ -531,7 +548,7 @@ function copySchema() {
             </AccordionPanel>
 
             <!-- ─── DATA TAB ─── -->
-            <AccordionPanel value="data" class="editor-panel">
+            <AccordionPanel v-if="hasDataTab" value="data" class="editor-panel">
               <AccordionHeader>Data</AccordionHeader>
               <AccordionContent>
                 <div class="prop-field mt-3">
@@ -598,7 +615,7 @@ function copySchema() {
             </AccordionPanel>
 
             <!-- ─── VALIDATION TAB ─── -->
-            <AccordionPanel value="validation" class="editor-panel">
+            <AccordionPanel v-if="hasValidationTab" value="validation" class="editor-panel">
               <AccordionHeader>Validation</AccordionHeader>
               <AccordionContent>
                 <div class="mt-3 flex items-center gap-2">
@@ -673,7 +690,7 @@ function copySchema() {
             </AccordionPanel>
 
             <!-- ─── API TAB ─── -->
-            <AccordionPanel value="api" class="editor-panel">
+            <AccordionPanel v-if="hasDataTab" value="api" class="editor-panel">
               <AccordionHeader>API</AccordionHeader>
               <AccordionContent>
                 <div class="prop-field mt-3">
