@@ -63,9 +63,9 @@ function getColumnStyle(col: ColumnDef): Record<string, string> {
 </template>
 
 <style scoped>
-.columns-field { margin-bottom: 1.25rem; }
-.columns-field__row { display: flex; gap: 1rem; flex-wrap: wrap; }
-.columns-field__col { min-width: 0; }
+.columns-field { margin-bottom: 1.25rem; overflow-x: hidden; }
+.columns-field__row { display: flex; flex-wrap: wrap; margin: -0.5rem; }
+.columns-field__col { padding: 0.5rem; min-width: 0; box-sizing: border-box; }
 
 @media (max-width: 640px) {
   .columns-field__row { flex-direction: column; }
