@@ -940,10 +940,10 @@ const hasValidationTab = computed(() => {
 }
 
 .sidebar-title {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--builder-text-muted);
   margin: 0 0 0.75rem 0;
 }
@@ -953,46 +953,58 @@ const hasValidationTab = computed(() => {
 }
 
 .sidebar-group__title {
-  font-size: 0.6875rem;
-  font-weight: 600;
+  font-size: 0.65rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--builder-text-muted);
+  letter-spacing: 0.08em;
+  color: #94a3b8;
   margin: 0 0 0.5rem 0;
+  padding-left: 0.25rem;
 }
 
 .sidebar-components {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.375rem;
 }
 
 .sidebar-component {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.625rem;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
   background: var(--builder-surface);
   border: 1px solid var(--builder-border);
   border-radius: 0.375rem;
   cursor: grab;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   font-size: 0.8125rem;
+  color: var(--builder-text);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+  user-select: none;
 }
 
 .sidebar-component:hover {
   background: var(--builder-primary-subtle);
   border-color: var(--builder-primary);
   color: var(--builder-primary);
-  transform: translateX(2px);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.05);
 }
 
 .sidebar-component:active {
   cursor: grabbing;
+  transform: translateY(0);
 }
 
 .sidebar-component__icon {
   font-size: 1rem;
+  color: var(--builder-text-muted);
+  transition: color 0.2s ease;
+}
+
+.sidebar-component:hover .sidebar-component__icon {
+  color: var(--builder-primary);
 }
 
 .sidebar-component__label {
@@ -1043,111 +1055,13 @@ const hasValidationTab = computed(() => {
   margin: 0;
 }
 
-.canvas-components {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.canvas-component {
-  background: var(--builder-surface);
-  border: 1px solid var(--builder-border);
-  border-radius: 0.5rem;
-  transition: all 0.15s ease;
-  overflow: hidden;
-}
-
-.canvas-component:hover {
-  border-color: #a5b4fc;
-}
-
-.canvas-component.is-selected {
-  border-color: var(--builder-primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
-}
-
-.canvas-component.drag-over {
-  border-color: var(--builder-primary);
-  border-style: dashed;
-  background: rgba(99, 102, 241, 0.03);
-}
-
-.canvas-component.is-dragging {
-  opacity: 0.4;
-}
-
-.canvas-component__header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.375rem 0.625rem;
-  background: var(--builder-surface-hover);
-  border-bottom: 1px solid var(--builder-border);
-  font-size: 0.75rem;
-}
-
-.canvas-component__drag {
-  cursor: grab;
-  color: var(--builder-text-muted);
-  font-size: 0.875rem;
-  user-select: none;
-}
-
-.canvas-component__type {
-  font-weight: 600;
-  color: var(--builder-primary);
-  text-transform: uppercase;
-  font-size: 0.625rem;
-  letter-spacing: 0.05em;
-  background: #eef2ff;
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
-}
-
-.canvas-component__key {
-  color: var(--builder-text-muted);
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 0.6875rem;
-}
-
-.canvas-component__actions {
-  margin-left: auto;
-  display: flex;
-  gap: 0.25rem;
-}
-
-.component-action {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 0.75rem;
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.25rem;
-  opacity: 0.6;
-  transition: all 0.15s ease;
-}
-
-.component-action:hover {
-  opacity: 1;
-  background: #e2e8f0;
-}
-
-.component-action--delete:hover {
-  background: #fef2f2;
-  color: var(--builder-danger);
-}
-
-.canvas-component__preview {
-  padding: 0.75rem;
-}
-
-.canvas-component__unknown {
-  padding: 0.5rem;
-  background: #fef3c7;
-  border-radius: 0.25rem;
+.canvas-empty__hint {
   font-size: 0.8125rem;
-  color: #92400e;
+  color: var(--builder-text-muted);
+  margin: 0;
 }
+
+/* ─── Property Editor ──────────────────────────────────────── */
 
 .canvas-drop-end {
   border: 2px dashed var(--builder-border);
@@ -1240,23 +1154,26 @@ const hasValidationTab = computed(() => {
 /* ─── Sidebar Accordion Overrides ─── */
 .builder-sidebar :deep(.p-accordionpanel) {
   border: none !important;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: var(--builder-surface, #ffffff);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
 }
 
 .builder-sidebar :deep(.p-accordionheader) {
-  padding: 0;
+  padding: 0.75rem 1rem;
   background: transparent;
   border: none !important;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--builder-text-muted);
+  color: var(--color-label, #374151);
+  transition: background 0.2s ease;
 }
 
 .builder-sidebar :deep(.p-accordionheader:hover) {
-  color: var(--builder-primary);
-  background: transparent;
+  color: var(--builder-primary, #6366f1);
+  background: var(--color-hover, #f9fafb);
 }
 
 .builder-sidebar :deep(.p-accordionheader-toggle-icon) {
@@ -1300,11 +1217,9 @@ const hasValidationTab = computed(() => {
 .prop-label {
   display: block;
   font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--builder-text-muted);
-  margin-bottom: 0.25rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  font-weight: 500;
+  color: var(--color-label, #374151);
+  margin-bottom: 0.375rem;
 }
 
 .prop-input {
@@ -1336,11 +1251,11 @@ const hasValidationTab = computed(() => {
 
 .prop-section__title {
   font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--builder-text-muted);
+  font-weight: 600;
+  color: var(--color-placeholder, #9ca3af);
   margin: 0 0 0.75rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .prop-checkbox {

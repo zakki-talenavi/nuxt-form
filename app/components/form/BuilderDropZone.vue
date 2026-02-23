@@ -226,101 +226,115 @@ function handleDropEnd(event: DragEvent) {
 
 /* Base styles ported from FormBuilder */
 .canvas-empty {
-  border: 2px dashed var(--builder-border);
+  border: 1.5px dashed var(--builder-border, #d1d5db);
   border-radius: var(--border-radius, 0.5rem);
-  padding: 2rem;
+  padding: 1.5rem;
   text-align: center;
-  color: var(--builder-text-muted);
-  min-height: 100px;
+  color: var(--color-placeholder, #9ca3af);
+  min-height: 80px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: var(--builder-surface);
+  background: var(--color-input-bg, #ffffff);
+  transition: all 0.2s;
+}
+.canvas-empty:hover {
+  border-color: var(--builder-primary, #6366f1);
+  background: var(--builder-primary-subtle, #eef2ff);
+  color: var(--builder-primary, #6366f1);
 }
 .canvas-empty__hint {
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
+  font-size: 0.8125rem;
   opacity: 0.8;
 }
 
 .canvas-components {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .canvas-component {
-  border: 1px solid var(--builder-border);
+  border: 1.5px solid var(--builder-border, #e5e7eb);
   border-radius: var(--border-radius, 0.5rem);
-  background: var(--builder-surface);
-  transition: all 0.2s;
+  background: var(--builder-surface, #ffffff);
+  transition: all 0.2s ease;
   position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 .canvas-component:hover {
-  border-color: var(--builder-primary);
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  border-color: var(--builder-primary, #6366f1);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 .canvas-component.drag-over {
-  border-top: 4px solid var(--builder-primary);
-  padding-top: 0.5rem;
+  border-top-width: 4px;
+  border-top-color: var(--builder-primary, #6366f1);
+  padding-top: 0;
 }
 .canvas-component.is-selected {
-  border-color: var(--builder-primary);
-  box-shadow: 0 0 0 2px var(--builder-primary-subtle);
+  border-color: var(--builder-primary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 .canvas-component.is-selected::before {
   content: '';
   position: absolute;
-  left: -1px;
-  top: -1px;
-  bottom: -1px;
+  left: 0;
+  top: 0;
+  bottom: 0;
   width: 4px;
-  background: var(--builder-primary);
-  border-radius: var(--border-radius, 0.5rem) 0 0 var(--border-radius, 0.5rem);
+  background: var(--builder-primary, #6366f1);
+  z-index: 1;
 }
 
 .canvas-component.is-dragging {
-  opacity: 0.5;
-  border-style: dashed;
+  opacity: 0.4;
+  border: 2px dashed var(--builder-primary, #6366f1);
+  background: var(--builder-primary-subtle, #eef2ff);
 }
 
 .canvas-component__header {
   display: flex;
   align-items: center;
-  padding: 0.5rem 0.75rem;
-  background: var(--builder-surface-hover);
-  border-bottom: 1px solid var(--builder-border);
-  border-radius: var(--border-radius, 0.5rem) var(--border-radius, 0.5rem) 0 0;
-  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  background: var(--color-hover, #f9fafb);
+  border-bottom: 1px solid var(--builder-border, #e5e7eb);
+  gap: 0.75rem;
   cursor: grab;
+  user-select: none;
 }
 .canvas-component__header:active {
   cursor: grabbing;
 }
 
 .canvas-component__drag {
-  color: var(--builder-text-muted);
-  font-size: 1.25rem;
-  cursor: grab;
-  user-select: none;
+  color: var(--color-placeholder, #9ca3af);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s;
+}
+.canvas-component:hover .canvas-component__drag {
+  color: var(--builder-primary, #6366f1);
 }
 
 .canvas-component__type {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.65rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--builder-primary);
-  background: var(--builder-primary-subtle);
-  padding: 0.125rem 0.375rem;
-  border-radius: 4px;
+  letter-spacing: 0.08em;
+  color: var(--builder-primary, #6366f1);
+  background: var(--builder-primary-subtle, #eef2ff);
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
 }
 
 .canvas-component__key {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-family: var(--font-family-mono, monospace);
-  color: var(--builder-text-muted);
+  color: var(--color-description, #6b7280);
   margin-left: auto;
 }
 
@@ -328,24 +342,30 @@ function handleDropEnd(event: DragEvent) {
   display: flex;
   gap: 0.25rem;
   margin-left: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.canvas-component:hover .canvas-component__actions {
+  opacity: 1;
 }
 
 .component-action {
-  background: none;
+  background: transparent;
   border: none;
   cursor: pointer;
   padding: 0.25rem;
-  font-size: 1rem;
+  width: 1.75rem;
+  height: 1.75rem;
   border-radius: 4px;
-  color: var(--builder-text-muted);
+  color: var(--color-description, #6b7280);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: all 0.15s;
 }
 .component-action:hover {
-  background: var(--builder-border);
-  color: var(--builder-text);
+  background: var(--color-border, #e5e7eb);
+  color: var(--color-label, #374151);
 }
 .component-action--delete:hover {
   background: #fef2f2;
@@ -358,27 +378,36 @@ function handleDropEnd(event: DragEvent) {
 }
 
 .canvas-drop-end {
-  padding: 1rem;
-  margin-top: 1rem;
-  border: 2px dashed var(--builder-border);
+  padding: 0.75rem;
+  margin-top: 0.75rem;
+  border: 1.5px dashed var(--builder-border, #e5e7eb);
   border-radius: var(--border-radius, 0.5rem);
   text-align: center;
-  color: var(--builder-text-muted);
+  color: var(--color-placeholder, #9ca3af);
+  font-size: 0.8125rem;
+  background: var(--color-hover, #f9fafb);
   transition: all 0.2s;
 }
+.canvas-drop-end:hover {
+  border-color: var(--builder-primary, #6366f1);
+  background: var(--builder-primary-subtle, #eef2ff);
+  color: var(--builder-primary, #6366f1);
+}
 .canvas-drop-end.drag-over {
-  border-color: var(--builder-primary);
-  background: var(--builder-primary-subtle);
-  color: var(--builder-primary);
+  border-style: solid;
+  border-color: var(--builder-primary, #6366f1);
+  background: var(--builder-primary-subtle, #eef2ff);
+  color: var(--builder-primary, #6366f1);
 }
 
 .canvas-component__unknown {
-  color: var(--builder-danger);
+  color: var(--color-error, #ef4444);
   background: #fef2f2;
   padding: 1rem;
   border-radius: var(--border-radius, 0.5rem);
   border: 1px solid #fecaca;
-  font-family: monospace;
+  font-family: var(--font-family-mono, monospace);
+  font-size: 0.8125rem;
 }
 
 /* Transitions */
