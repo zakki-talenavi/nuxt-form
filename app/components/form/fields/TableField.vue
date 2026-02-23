@@ -43,9 +43,11 @@ const headers = computed(() => (props.component.header as string[]) || [])
         <tbody>
           <tr v-for="(row, rowIdx) in rows" :key="rowIdx">
             <td v-for="(cell, cellIdx) in row" :key="cellIdx" class="table-field__td">
-              <template v-for="(child, childIdx) in cell.components" :key="child.key || childIdx">
-                <slot name="renderComponent" :component="child" />
-              </template>
+              <slot name="renderZone" :list="cell.components">
+                <template v-for="(child, childIdx) in cell.components" :key="child.key || childIdx">
+                  <slot name="renderComponent" :component="child" />
+                </template>
+              </slot>
             </td>
           </tr>
         </tbody>

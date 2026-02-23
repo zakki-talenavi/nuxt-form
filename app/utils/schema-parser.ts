@@ -589,6 +589,35 @@ export function evaluateCalculatedValue(
 }
 
 /**
+ * Recursively iterate through all components and their nested children.
+ * Invokes the callback for every component found.
+ */
+export function eachComponent(
+  components: FormComponentSchema[],
+  fn: (component: FormComponentSchema, parent?: FormComponentSchema, path?: string) => void,
+  parent?: FormComponentSchema,
+  path?: string
+): void {
+  for (const comp of components) {
+    const currentPath = path ? `${path}.${comp.key}` : comp.key
+    fn(comp, parent, currentPath)
+
+    if (Array.isArray(comp.components)) {
+      eachComponent(comp.components, fn, comp, currentPath)
+    }
+
+    if (Array.isArray(comp.columns)) {
+      for (let i = 0; i < comp.columns.length; i++) {
+        const col = comp.columns[i]
+        if (Array.isArray(col.components)) {
+          eachComponent(col.components, fn, comp, `${currentPath}.columns[${i}]`)
+        }
+      }
+    }
+  }
+}
+
+/**
  * Create an empty submission object from a schema.
  */
 export function createEmptySubmission(schema: FormSchema): FormSubmission {

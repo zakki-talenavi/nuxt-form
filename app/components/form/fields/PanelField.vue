@@ -36,9 +36,11 @@ function toggleCollapse() {
     v-model:collapsed="isCollapsed"
     :class="[`panel-theme-${theme}`, component.customClass, 'mb-5']"
   >
-    <template v-for="(child, idx) in children" :key="child.key || idx">
-      <slot name="renderComponent" :component="child" />
-    </template>
+    <slot name="renderZone" :list="children">
+      <template v-for="(child, idx) in children" :key="child.key || idx">
+        <slot name="renderComponent" :component="child" />
+      </template>
+    </slot>
   </Panel>
 </template>
 

@@ -27,9 +27,11 @@ const children = computed(() => (props.component.components as FormComponentSche
       {{ component.label }}
     </label>
     <div class="container-field__body">
-      <template v-for="(child, idx) in children" :key="child.key || idx">
-        <slot name="renderComponent" :component="child" />
-      </template>
+        <slot name="renderZone" :list="children">
+          <template v-for="(child, idx) in children" :key="child.key || idx">
+            <slot name="renderComponent" :component="child" />
+          </template>
+        </slot>
     </div>
   </div>
 </template>

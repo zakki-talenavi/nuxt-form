@@ -137,6 +137,7 @@ export function useComponentRegistry() {
       key: type,
       label: entry.builderInfo.title,
       input: true,
+      ...entry.builderInfo.schema,
       ...entry.defaultSchema,
     } as FormComponentSchema
   }

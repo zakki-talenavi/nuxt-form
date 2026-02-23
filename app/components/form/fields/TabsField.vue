@@ -44,9 +44,11 @@ function setActiveTab(index: number) {
     </TabList>
     <TabPanels>
       <TabPanel v-for="(tab, idx) in tabs" :key="`panel-${idx}`" :value="idx">
-        <template v-for="(child, childIdx) in tab.components" :key="child.key || childIdx">
-          <slot name="renderComponent" :component="child" />
-        </template>
+        <slot name="renderZone" :list="tab.components">
+          <template v-for="(child, childIdx) in tab.components" :key="child.key || childIdx">
+            <slot name="renderComponent" :component="child" />
+          </template>
+        </slot>
       </TabPanel>
     </TabPanels>
   </Tabs>

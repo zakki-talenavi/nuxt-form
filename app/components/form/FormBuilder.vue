@@ -11,10 +11,11 @@ import CodeEditor from './CodeEditor.vue'
  * - Live preview mode
  * - JSON schema export
  */
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, provide, nextTick } from 'vue'
 import type { FormSchema, FormComponentSchema, SelectValue } from '../../types/form'
 import { useFormBuilder } from '../../composables/useFormBuilder'
 import { useComponentRegistry } from '../../composables/useComponentRegistry'
+import BuilderDropZone from './BuilderDropZone.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -32,11 +33,10 @@ const emit = defineEmits<{
 
 const registry = useComponentRegistry()
 const builder = useFormBuilder(props.schema)
+provide('formBuilder', builder)
 
 // ─── Local state ─────────────────────────────────────────────
 const showJsonPanel = ref(false)
-const dragOverIndex = ref<number | null>(null)
-const dragSourceIndex = ref<number | null>(null)
 const editingSelectValues = ref<SelectValue[]>([])
 
 // ─── Computed ────────────────────────────────────────────────
@@ -68,77 +68,27 @@ watch(
 
 // ─── Drag & Drop Handlers ───────────────────────────────────
 function handleDragStartPalette(type: string, event: DragEvent) {
-  event.dataTransfer?.setData('componentType', type)
-  event.dataTransfer?.setData('source', 'palette')
-  dragSourceIndex.value = null
-}
-
-function handleDragStartCanvas(index: number, event: DragEvent) {
-  event.dataTransfer?.setData('componentIndex', String(index))
-  event.dataTransfer?.setData('source', 'canvas')
-  dragSourceIndex.value = index
-}
-
-function handleDragOver(index: number, event: DragEvent) {
-  event.preventDefault()
+  event.dataTransfer?.setData('text/plain', JSON.stringify({
+    sourceFormat: 'builder-palette',
+    componentType: type
+  }))
   if (event.dataTransfer) {
-    event.dataTransfer.dropEffect = 'move'
-  }
-  dragOverIndex.value = index
-}
-
-function handleDragLeave() {
-  dragOverIndex.value = null
-}
-
-function handleDrop(index: number, event: DragEvent) {
-  event.preventDefault()
-  dragOverIndex.value = null
-
-  const source = event.dataTransfer?.getData('source')
-
-  if (source === 'palette') {
-    const type = event.dataTransfer?.getData('componentType')
-    if (type) {
-      builder.addComponent(type, index)
-    }
-  } else if (source === 'canvas') {
-    const fromStr = event.dataTransfer?.getData('componentIndex')
-    if (fromStr != null) {
-      const fromIndex = parseInt(fromStr, 10)
-      builder.moveComponent(fromIndex, index)
-    }
-  }
-
-  dragSourceIndex.value = null
-}
-
-function handleDropEnd(event: DragEvent) {
-  event.preventDefault()
-  dragOverIndex.value = null
-
-  const source = event.dataTransfer?.getData('source')
-
-  if (source === 'palette') {
-    const type = event.dataTransfer?.getData('componentType')
-    if (type && builder.schema.value.components.length === 0) {
-      builder.addComponent(type)
-    }
+    event.dataTransfer.effectAllowed = 'copy'
   }
 }
 
 // ─── Property Editor Handlers ────────────────────────────────
 function updateSelectedProp(prop: string, value: unknown) {
-  if (builder.selectedComponentIndex.value === null) return
-  builder.updateComponent(builder.selectedComponentIndex.value, { [prop]: value })
+  if (!builder.selectedComponentKey.value) return
+  builder.updateComponent(builder.selectedComponentKey.value, { [prop]: value })
 }
 
 function updateValidation(prop: string, value: unknown) {
-  if (builder.selectedComponentIndex.value === null) return
+  if (!builder.selectedComponentKey.value) return
   const comp = builder.selectedComponent.value
   if (!comp) return
 
-  builder.updateComponent(builder.selectedComponentIndex.value, {
+  builder.updateComponent(builder.selectedComponentKey.value, {
     validate: { ...comp.validate, [prop]: value },
   })
 }
@@ -162,10 +112,47 @@ function updateSelectOption(index: number, field: 'label' | 'value', val: string
 }
 
 function syncSelectValues() {
-  if (builder.selectedComponentIndex.value === null) return
-  builder.updateComponent(builder.selectedComponentIndex.value, {
+  if (!builder.selectedComponentKey.value) return
+  builder.updateComponent(builder.selectedComponentKey.value, {
     data: { values: [...editingSelectValues.value] },
   })
+}
+
+// ─── Columns Editor (Layout Tab) ─────────────────────────────
+const editingColumns = computed(() => {
+  if (builder.selectedComponent.value?.type === 'columns') {
+    return (builder.selectedComponent.value.columns as any[]) || []
+  }
+  return []
+})
+
+function addColumn() {
+  const comp = builder.selectedComponent.value
+  if (!comp) return
+  const currentTotal = editingColumns.value.reduce((sum, c) => sum + (c.width || c.currentWidth || 6), 0)
+  const newWidth = currentTotal < 12 ? Math.min(6, 12 - currentTotal) : 6
+  
+  const cols = [...(comp.columns || [])]
+  cols.push({ components: [], width: newWidth, offset: 0, push: 0, pull: 0, size: 'md' })
+  builder.updateComponent(comp.key, { columns: cols })
+}
+
+function removeColumn(index: number) {
+  const comp = builder.selectedComponent.value
+  if (!comp) return
+  const cols = [...(comp.columns || [])]
+  cols.splice(index, 1)
+  builder.updateComponent(comp.key, { columns: cols })
+}
+
+function updateColumnProp(index: number, prop: string, val: any) {
+  const comp = builder.selectedComponent.value
+  if (!comp) return
+  if (!comp.columns) comp.columns = []
+  
+  // Mutate in-place so input focus isn't lost by array/object replacement
+  comp.columns[index][prop] = val
+  builder.updateComponent(comp.key, { columns: comp.columns })
 }
 
 function copySchema() {
@@ -255,90 +242,7 @@ function copySchema() {
 
       <!-- ─── Canvas: Form Preview ────────────────────────── -->
       <main class="builder-canvas">
-        <div
-          v-if="builder.schema.value.components.length === 0"
-          class="canvas-empty"
-          @dragover.prevent="handleDragOver(0, $event)"
-          @dragleave="handleDragLeave"
-          @drop="handleDropEnd"
-        >
-          <div class="canvas-empty__icon">📋</div>
-          <p class="canvas-empty__text">Drag components here to build your form</p>
-          <p class="canvas-empty__hint">Or click a component in the sidebar</p>
-        </div>
-
-        <TransitionGroup
-          v-else
-          name="component-list"
-          tag="div"
-          class="canvas-components"
-        >
-          <div
-            v-for="(comp, index) in builder.schema.value.components"
-            :key="comp.key"
-            class="canvas-component"
-            :class="{
-              'is-selected': builder.selectedComponentIndex.value === index,
-              'drag-over': dragOverIndex === index,
-              'is-dragging': dragSourceIndex === index,
-            }"
-            :draggable="!builder.isPreviewMode.value"
-            @click="builder.selectComponent(index)"
-            @dragstart="handleDragStartCanvas(index, $event)"
-            @dragover="handleDragOver(index, $event)"
-            @dragleave="handleDragLeave"
-            @drop="handleDrop(index, $event)"
-          >
-            <div v-if="!builder.isPreviewMode.value" class="canvas-component__header">
-              <span class="canvas-component__drag">⠿</span>
-              <span class="canvas-component__type">{{ comp.type }}</span>
-              <span class="canvas-component__key">{{ comp.key }}</span>
-              <div class="canvas-component__actions">
-                <button
-                  class="component-action"
-                  title="Duplicate"
-                  @click.stop="builder.duplicateComponent(index)"
-                >
-                  📋
-                </button>
-                <button
-                  class="component-action component-action--delete"
-                  title="Remove"
-                  @click.stop="builder.removeComponent(index)"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            <div class="canvas-component__preview">
-              <component
-                v-if="registry.getComponent(comp.type)"
-                :is="registry.getComponent(comp.type)"
-                :component="comp"
-                :model-value="undefined"
-                :errors="[]"
-                :disabled="!builder.isPreviewMode.value"
-                :read-only="!builder.isPreviewMode.value"
-              />
-              <div v-else class="canvas-component__unknown">
-                Unknown: {{ comp.type }}
-              </div>
-            </div>
-          </div>
-        </TransitionGroup>
-
-        <!-- Drop zone at the end -->
-        <div
-          v-if="builder.schema.value.components.length > 0 && !builder.isPreviewMode.value"
-          class="canvas-drop-end"
-          :class="{ 'drag-over': dragOverIndex === builder.schema.value.components.length }"
-          @dragover="handleDragOver(builder.schema.value.components.length, $event)"
-          @dragleave="handleDragLeave"
-          @drop="handleDrop(builder.schema.value.components.length, $event)"
-        >
-          <span>Drop here to add at end</span>
-        </div>
+        <BuilderDropZone :list="builder.schema.value.components" />
       </main>
 
       <!-- ─── Property Editor Panel ───────────────────────── -->
@@ -844,6 +748,45 @@ function copySchema() {
               </AccordionContent>
             </AccordionPanel>
 
+            <!-- ─── LAYOUT TAB (Columns) ─── -->
+            <AccordionPanel v-if="builder.selectedComponent.value.type === 'columns'" value="layout" class="editor-panel">
+              <AccordionHeader>Layout</AccordionHeader>
+              <AccordionContent>
+                <div class="prop-section">
+                  <h4 class="prop-section__title">Columns Configuration</h4>
+                  <p class="text-xs text-slate-500 mb-3">Adjust the width of each column (1-12 span).</p>
+                  
+                  <div
+                    v-for="(col, idx) in editingColumns"
+                    :key="idx"
+                    class="select-option-row flex gap-2 mb-2 items-center bg-slate-50 p-2 rounded border border-slate-200"
+                  >
+                    <span class="text-xs font-semibold text-slate-500 w-16">Col {{ idx + 1 }}</span>
+                    <div class="flex-1 flex items-center gap-2">
+                      <label class="text-xs text-slate-500">Width</label>
+                      <InputText
+                        :model-value="col.width"
+                        type="number"
+                        min="1"
+                        max="12"
+                        placeholder="6"
+                        class="w-full text-center"
+                        size="small"
+                        @update:model-value="updateColumnProp(idx, 'width', $event ? Number($event) : undefined)"
+                      />
+                    </div>
+                    <button
+                      class="select-option-remove hover:bg-red-100 hover:text-red-600 p-1 rounded"
+                      title="Remove Column"
+                      @click="removeColumn(idx)"
+                    >✕</button>
+                  </div>
+                  
+                  <button class="prop-btn mt-2 w-full" @click="addColumn">+ Add Column</button>
+                </div>
+              </AccordionContent>
+            </AccordionPanel>
+
             <!-- ─── LOGIC TAB ─── -->
             <AccordionPanel value="logic" class="editor-panel">
               <AccordionHeader>Logic</AccordionHeader>
@@ -876,13 +819,16 @@ function copySchema() {
 
 <style scoped>
 .form-builder {
-  --builder-bg: #f8fafc;
+  --builder-bg: #f1f5f9;
   --builder-sidebar-bg: #ffffff;
-  --builder-border: #e2e8f0;
+  --builder-border: #cbd5e1;
   --builder-primary: #6366f1;
-  --builder-text: #1e293b;
+  --builder-primary-subtle: #e0e7ff;
+  --builder-text: #0f172a;
   --builder-text-muted: #64748b;
   --builder-danger: #ef4444;
+  --builder-surface: #ffffff;
+  --builder-surface-hover: #f8fafc;
 
   display: flex;
   flex-direction: column;
@@ -898,7 +844,7 @@ function copySchema() {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  background: #ffffff;
+  background: var(--builder-sidebar-bg);
   border-bottom: 1px solid var(--builder-border);
   gap: 1rem;
   flex-shrink: 0;
@@ -922,7 +868,7 @@ function copySchema() {
   font-weight: 500;
   border: 1px solid var(--builder-border);
   border-radius: 0.375rem;
-  background: #ffffff;
+  background: var(--builder-surface);
   color: var(--builder-text);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -931,8 +877,8 @@ function copySchema() {
 }
 
 .toolbar-btn:hover:not(:disabled) {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+  background: var(--builder-surface-hover);
+  border-color: #94a3b8;
 }
 
 .toolbar-btn:disabled {
@@ -1009,7 +955,7 @@ function copySchema() {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.625rem;
-  background: #f8fafc;
+  background: var(--builder-surface);
   border: 1px solid var(--builder-border);
   border-radius: 0.375rem;
   cursor: grab;
@@ -1018,8 +964,9 @@ function copySchema() {
 }
 
 .sidebar-component:hover {
-  background: #eef2ff;
+  background: var(--builder-primary-subtle);
   border-color: var(--builder-primary);
+  color: var(--builder-primary);
   transform: translateX(2px);
 }
 
@@ -1086,8 +1033,8 @@ function copySchema() {
 }
 
 .canvas-component {
-  background: #ffffff;
-  border: 1.5px solid var(--builder-border);
+  background: var(--builder-surface);
+  border: 1px solid var(--builder-border);
   border-radius: 0.5rem;
   transition: all 0.15s ease;
   overflow: hidden;
@@ -1117,7 +1064,7 @@ function copySchema() {
   align-items: center;
   gap: 0.5rem;
   padding: 0.375rem 0.625rem;
-  background: #f8fafc;
+  background: var(--builder-surface-hover);
   border-bottom: 1px solid var(--builder-border);
   font-size: 0.75rem;
 }

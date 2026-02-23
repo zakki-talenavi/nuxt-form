@@ -16,7 +16,7 @@ import type {
   BuilderComponentInfo,
 } from '../types/form'
 import { useComponentRegistry } from './useComponentRegistry'
-import { generateComponentKey } from '../utils/schema-parser'
+import { generateComponentKey, eachComponent } from '../utils/schema-parser'
 
 export function useFormBuilder(initialSchema?: FormSchema) {
   const { getBuilderGroups, createDefaultSchema } = useComponentRegistry()
@@ -29,7 +29,7 @@ export function useFormBuilder(initialSchema?: FormSchema) {
     },
   )
 
-  const selectedComponentIndex = ref<number | null>(null)
+  const selectedComponentKey = ref<string | null>(null)
   const isPreviewMode = ref(false)
   const history = ref<FormSchema[]>([])
   const historyIndex = ref(-1)
@@ -42,16 +42,25 @@ export function useFormBuilder(initialSchema?: FormSchema) {
     },
   })
 
+  // Deep search for the currently selected component
   const selectedComponent = computed<FormComponentSchema | null>(() => {
-    if (selectedComponentIndex.value === null) return null
-    return schema.value.components[selectedComponentIndex.value] ?? null
+    console.log('[useFormBuilder] evaluating selectedComponent. key:', selectedComponentKey.value)
+    if (!selectedComponentKey.value) return null
+    let found: FormComponentSchema | null = null
+    eachComponent(schema.value.components, (comp) => {
+      if (comp.key === selectedComponentKey.value) found = comp
+    })
+    console.log('[useFormBuilder] found component:', found)
+    return found
   })
 
   const builderGroups = computed(() => getBuilderGroups())
 
-  const existingKeys = computed(() =>
-    schema.value.components.map((c) => c.key),
-  )
+  const existingKeys = computed(() => {
+    const keys: string[] = []
+    eachComponent(schema.value.components, (c) => keys.push(c.key))
+    return keys
+  })
 
   const canUndo = computed(() => historyIndex.value > 0)
   const canRedo = computed(() => historyIndex.value < history.value.length - 1)
@@ -81,7 +90,7 @@ export function useFormBuilder(initialSchema?: FormSchema) {
     schema.value = JSON.parse(
       JSON.stringify(history.value[historyIndex.value]),
     ) as FormSchema
-    selectedComponentIndex.value = null
+    selectedComponentKey.value = null
   }
 
   function redo(): void {
@@ -90,15 +99,15 @@ export function useFormBuilder(initialSchema?: FormSchema) {
     schema.value = JSON.parse(
       JSON.stringify(history.value[historyIndex.value]),
     ) as FormSchema
-    selectedComponentIndex.value = null
+    selectedComponentKey.value = null
   }
 
   // ─── Component Operations ─────────────────────────────────
-  /**
-   * Add a new component to the form.
-   */
+
+
   function addComponent(
     type: string,
+    targetList: FormComponentSchema[] = schema.value.components,
     index?: number,
   ): FormComponentSchema | null {
     const baseSchema = createDefaultSchema(type)
@@ -110,100 +119,118 @@ export function useFormBuilder(initialSchema?: FormSchema) {
     baseSchema.key = generateComponentKey(type, existingKeys.value)
     baseSchema.label = baseSchema.label ?? type.charAt(0).toUpperCase() + type.slice(1)
 
-    const newComponents = [...schema.value.components]
-    const insertIndex = index ?? newComponents.length
+    const insertIndex = index ?? targetList.length
 
-    newComponents.splice(insertIndex, 0, baseSchema)
-    schema.value = { ...schema.value, components: newComponents }
+    targetList.splice(insertIndex, 0, baseSchema)
 
-    selectedComponentIndex.value = insertIndex
+    selectedComponentKey.value = baseSchema.key
     return baseSchema
   }
 
   /**
-   * Remove a component by index.
+   * Remove a component from a specific target array by its key.
    */
-  function removeComponent(index: number): void {
-    if (index < 0 || index >= schema.value.components.length) return
+  function removeComponent(
+    componentKey: string,
+    targetList: FormComponentSchema[] = schema.value.components,
+  ): void {
+    const idx = targetList.findIndex(c => c.key === componentKey)
+    if (idx === -1) return
 
     pushHistory()
 
-    const newComponents = [...schema.value.components]
-    newComponents.splice(index, 1)
-    schema.value = { ...schema.value, components: newComponents }
+    targetList.splice(idx, 1)
 
     // Adjust selection
-    if (selectedComponentIndex.value === index) {
-      selectedComponentIndex.value = null
-    } else if (
-      selectedComponentIndex.value !== null &&
-      selectedComponentIndex.value > index
-    ) {
-      selectedComponentIndex.value--
+    if (selectedComponentKey.value === componentKey) {
+      selectedComponentKey.value = null
     }
   }
 
   /**
-   * Move a component from one index to another.
+   * Move a component within the same list.
    */
-  function moveComponent(fromIndex: number, toIndex: number): void {
+  function moveComponent(
+    targetList: FormComponentSchema[],
+    fromIndex: number,
+    toIndex: number
+  ): void {
     if (fromIndex === toIndex) return
-    if (fromIndex < 0 || fromIndex >= schema.value.components.length) return
-    if (toIndex < 0 || toIndex > schema.value.components.length) return
+    if (fromIndex < 0 || fromIndex >= targetList.length) return
+    if (toIndex < 0 || toIndex > targetList.length) return
 
     pushHistory()
 
-    const newComponents = [...schema.value.components]
-    const [moved] = newComponents.splice(fromIndex, 1)
-    newComponents.splice(toIndex > fromIndex ? toIndex - 1 : toIndex, 0, moved)
-    schema.value = { ...schema.value, components: newComponents }
-
-    // Update selection
-    if (selectedComponentIndex.value === fromIndex) {
-      selectedComponentIndex.value = toIndex > fromIndex ? toIndex - 1 : toIndex
+    const movedArray = targetList.splice(fromIndex, 1)
+    if (movedArray.length > 0 && movedArray[0]) {
+      targetList.splice(toIndex > fromIndex ? toIndex - 1 : toIndex, 0, movedArray[0])
     }
   }
 
   /**
-   * Update a component's properties.
+   * Move a component across different lists (e.g. from root into a column).
+   */
+  function moveComponentBetweenLists(
+    sourceList: FormComponentSchema[],
+    sourceIndex: number,
+    targetList: FormComponentSchema[],
+    targetIndex: number
+  ): void {
+    if (sourceIndex < 0 || sourceIndex >= sourceList.length) return
+
+    pushHistory()
+
+    const movedArray = sourceList.splice(sourceIndex, 1)
+    if (movedArray.length > 0 && movedArray[0]) {
+      targetList.splice(targetIndex, 0, movedArray[0])
+    }
+  }
+
+  /**
+   * Update a component's properties by modifying the schema dynamically via reactivity.
    */
   function updateComponent(
-    index: number,
+    componentKey: string,
     updates: Partial<FormComponentSchema>,
   ): void {
-    if (index < 0 || index >= schema.value.components.length) return
-
     pushHistory()
 
-    const newComponents = [...schema.value.components]
-    newComponents[index] = { ...newComponents[index], ...updates }
-    schema.value = { ...schema.value, components: newComponents }
+    eachComponent(schema.value.components, (comp) => {
+      if (comp.key === componentKey) {
+        Object.assign(comp, updates)
+      }
+    })
   }
 
   /**
-   * Duplicate a component.
+   * Duplicate a component within a target list.
    */
-  function duplicateComponent(index: number): void {
-    if (index < 0 || index >= schema.value.components.length) return
+  function duplicateComponent(
+    componentKey: string,
+    targetList: FormComponentSchema[] = schema.value.components,
+  ): void {
+    const idx = targetList.findIndex(c => c.key === componentKey)
+    if (idx === -1) return
 
     pushHistory()
 
-    const original = schema.value.components[index]
+    const original = targetList[idx]
+    if (!original) return
+
     const clone = JSON.parse(JSON.stringify(toRaw(original))) as FormComponentSchema
     clone.key = generateComponentKey(original.type, existingKeys.value)
 
-    const newComponents = [...schema.value.components]
-    newComponents.splice(index + 1, 0, clone)
-    schema.value = { ...schema.value, components: newComponents }
+    targetList.splice(idx + 1, 0, clone)
 
-    selectedComponentIndex.value = index + 1
+    selectedComponentKey.value = clone.key
   }
 
   /**
    * Select a component for editing.
    */
-  function selectComponent(index: number | null): void {
-    selectedComponentIndex.value = index
+  function selectComponent(key: string | null): void {
+    console.log('[useFormBuilder] selectComponent called with key:', key)
+    selectedComponentKey.value = key
   }
 
   /**
@@ -212,7 +239,7 @@ export function useFormBuilder(initialSchema?: FormSchema) {
   function clearForm(): void {
     pushHistory()
     schema.value = { ...schema.value, components: [] }
-    selectedComponentIndex.value = null
+    selectedComponentKey.value = null
   }
 
   /**
@@ -221,14 +248,14 @@ export function useFormBuilder(initialSchema?: FormSchema) {
   function importSchema(newSchema: FormSchema): void {
     pushHistory()
     schema.value = JSON.parse(JSON.stringify(newSchema)) as FormSchema
-    selectedComponentIndex.value = null
+    selectedComponentKey.value = null
   }
 
   /**
    * Export the current schema as a clean JSON object.
    */
   function exportSchema(): FormSchema {
-    return JSON.parse(JSON.stringify(toRaw(schema.value))) as FormSchema
+    return JSON.parse(JSON.stringify(schema.value)) as FormSchema
   }
 
   /**
@@ -236,7 +263,7 @@ export function useFormBuilder(initialSchema?: FormSchema) {
    */
   function togglePreview(): void {
     isPreviewMode.value = !isPreviewMode.value
-    selectedComponentIndex.value = null
+    selectedComponentKey.value = null
   }
 
   // ─── Initialize history ────────────────────────────────────
@@ -247,27 +274,25 @@ export function useFormBuilder(initialSchema?: FormSchema) {
     schema,
     components,
     selectedComponent,
-    selectedComponentIndex,
-    isPreviewMode,
+    selectedComponentKey,
     builderGroups,
+    existingKeys,
     canUndo,
     canRedo,
+    isPreviewMode,
 
-    // Component Operations
+    // Actions
     addComponent,
     removeComponent,
     moveComponent,
+    moveComponentBetweenLists,
     updateComponent,
     duplicateComponent,
     selectComponent,
-
-    // Form Operations
     clearForm,
     importSchema,
     exportSchema,
     togglePreview,
-
-    // History
     undo,
     redo,
   }

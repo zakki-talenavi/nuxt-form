@@ -52,9 +52,11 @@ function getColumnStyle(col: ColumnDef): Record<string, string> {
         class="columns-field__col"
         :style="getColumnStyle(col)"
       >
-        <template v-for="(child, childIdx) in col.components" :key="child.key || childIdx">
-          <slot name="renderComponent" :component="child" />
-        </template>
+        <slot name="renderZone" :list="col.components">
+          <template v-for="(child, childIdx) in col.components" :key="child.key || childIdx">
+            <slot name="renderComponent" :component="child" />
+          </template>
+        </slot>
       </div>
     </div>
   </div>
