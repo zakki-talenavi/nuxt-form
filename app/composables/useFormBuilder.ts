@@ -18,6 +18,45 @@ import type {
 import { useComponentRegistry } from './useComponentRegistry'
 import { generateComponentKey, eachComponent } from '../utils/schema-parser'
 
+/**
+ * Utility to safely deep clone an object, stripping any circular references
+ * that might be accidentally injected by drag-and-drop libraries or Vue proxies.
+ * 
+ * Uses a WeakSet to track the traversal path, preventing true circular references 
+ * without incorrectly dropping valid sibling duplicate objects.
+ */
+function safeClone<T>(obj: T, seen = new WeakSet()): T {
+  if (obj === null || typeof obj !== 'object') {
+    return obj
+  }
+  
+  if (seen.has(obj)) {
+    console.warn('[useFormBuilder] Removed circular reference')
+    return undefined as unknown as T
+  }
+  
+  seen.add(obj)
+  
+  if (Array.isArray(obj)) {
+    const copy = obj.map((item) => safeClone(item, seen)) as unknown as T
+    seen.delete(obj)
+    return copy
+  }
+  
+  const copy: Record<string, unknown> = {}
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const val = safeClone((obj as Record<string, unknown>)[key], seen)
+      if (val !== undefined) {
+        copy[key] = val
+      }
+    }
+  }
+  
+  seen.delete(obj)
+  return copy as T
+}
+
 export function useFormBuilder(initialSchema?: FormSchema) {
   const { getBuilderGroups, createDefaultSchema } = useComponentRegistry()
 
@@ -67,7 +106,7 @@ export function useFormBuilder(initialSchema?: FormSchema) {
 
   // ─── History ───────────────────────────────────────────────
   function pushHistory(): void {
-    const snapshot = JSON.parse(JSON.stringify(toRaw(schema.value))) as FormSchema
+    const snapshot = safeClone(toRaw(schema.value))
 
     // Remove future states if we're in the middle of history
     if (historyIndex.value < history.value.length - 1) {
@@ -87,18 +126,14 @@ export function useFormBuilder(initialSchema?: FormSchema) {
   function undo(): void {
     if (!canUndo.value) return
     historyIndex.value--
-    schema.value = JSON.parse(
-      JSON.stringify(history.value[historyIndex.value]),
-    ) as FormSchema
+    schema.value = safeClone(history.value[historyIndex.value]) as FormSchema
     selectedComponentKey.value = null
   }
 
   function redo(): void {
     if (!canRedo.value) return
     historyIndex.value++
-    schema.value = JSON.parse(
-      JSON.stringify(history.value[historyIndex.value]),
-    ) as FormSchema
+    schema.value = safeClone(history.value[historyIndex.value]) as FormSchema
     selectedComponentKey.value = null
   }
 
@@ -255,7 +290,7 @@ export function useFormBuilder(initialSchema?: FormSchema) {
    * Export the current schema as a clean JSON object.
    */
   function exportSchema(): FormSchema {
-    return JSON.parse(JSON.stringify(schema.value)) as FormSchema
+    return safeClone(toRaw(schema.value))
   }
 
   /**
