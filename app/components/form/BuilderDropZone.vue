@@ -219,8 +219,9 @@ function handleDropEnd(event: DragEvent) {
 
 <style scoped>
 .builder-dropzone {
-  min-height: 50px;
+  min-height: 100%;
   display: flex;
+  flex: 1;
   flex-direction: column;
 }
 
@@ -378,11 +379,15 @@ function handleDropEnd(event: DragEvent) {
 }
 
 .canvas-drop-end {
-  padding: 0.75rem;
+  flex: 1;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
   margin-top: 0.75rem;
   border: 1.5px dashed var(--builder-border, #e5e7eb);
   border-radius: var(--border-radius, 0.5rem);
-  text-align: center;
   color: var(--color-placeholder, #9ca3af);
   font-size: 0.8125rem;
   background: var(--color-hover, #f9fafb);
