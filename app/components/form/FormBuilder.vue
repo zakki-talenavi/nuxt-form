@@ -159,7 +159,7 @@ function copySchema() {
       </main>
 
       <!-- ─── Property Editor Panel ───────────────────────── -->
-      <aside v-if="builder.selectedComponent.value && !builder.isPreviewMode.value" class="builder-sidebar properties-panel">
+      <aside v-if="builder.selectedComponent.value && !builder.isPreviewMode.value" class="builder-properties properties-panel">
         <PropertyEditor
           :component="builder.selectedComponent.value"
           :builder="builder"
@@ -427,12 +427,13 @@ function copySchema() {
 
 /* ─── Properties Panel ─────────────────────────────────────── */
 .builder-properties {
-  width: 380px;
+  width: 350px;
   flex-shrink: 0;
   background: var(--builder-sidebar-bg);
   border-left: 1px solid var(--builder-border);
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 
 .properties-header {
@@ -442,6 +443,8 @@ function copySchema() {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--builder-border);
   flex-shrink: 0;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .properties-body {
@@ -449,6 +452,8 @@ function copySchema() {
   overflow-y: hidden;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 /* ─── Properties Accordion Overrides ─── */
@@ -494,6 +499,28 @@ function copySchema() {
   padding: 1rem;
   background: var(--builder-sidebar-bg);
   border: none !important;
+  box-sizing: border-box;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+/* ─── Force ALL children inside properties to respect width ─── */
+.builder-properties :deep(*) {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.builder-properties :deep(.p-inputtext),
+.builder-properties :deep(.p-select),
+.builder-properties :deep(.p-multiselect),
+.builder-properties :deep(.p-textarea) {
+  width: 100%;
+}
+
+.builder-properties :deep(.code-editor-wrapper),
+.builder-properties :deep(.code-editor-container),
+.builder-properties :deep(.cm-editor) {
+  width: 100%;
 }
 
 /* ─── Sidebar Accordion Overrides ─── */
@@ -552,7 +579,7 @@ function copySchema() {
 }
 
 .properties-body {
-  padding: 1rem;
+  padding: 0; /* Let accordion handle padding to avoid double spacing & overflow */
 }
 
 .prop-field {

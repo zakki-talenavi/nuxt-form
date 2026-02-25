@@ -17,7 +17,7 @@ function updateProp(prop: string, value: any) {
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-col max-w-full min-w-0 overflow-hidden box-border pr-2">
     <!-- Button Specific -->
     <template v-if="component.type === 'button'">
       <div class="prop-field">
@@ -184,7 +184,7 @@ function updateProp(prop: string, value: any) {
       />
     </div>
     
-    <div class="flex-row" v-if="!['button', 'checkbox'].includes(component.type)">
+    <div class="flex flex-col" v-if="!['button', 'checkbox'].includes(component.type)">
       <div class="prop-field flex-1">
         <label class="prop-label">Prefix</label>
         <InputText
@@ -297,8 +297,4 @@ function updateProp(prop: string, value: any) {
   border-top: 1px solid var(--builder-border, #e5e7eb);
 }
 
-.flex-row {
-  display: flex;
-  gap: 0.5rem;
-}
 </style>

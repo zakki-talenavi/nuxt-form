@@ -22,7 +22,7 @@ function updateValidation(prop: string, value: any) {
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-col max-w-full min-w-0 overflow-hidden box-border pr-2">
     <div class="prop-field flex items-center gap-2 mt-2">
       <Checkbox
         :model-value="component.validate?.required ?? false"
@@ -43,7 +43,7 @@ function updateValidation(prop: string, value: any) {
       <label for="propUnique" class="prop-label mb-0 cursor-pointer">Unique</label>
     </div>
     
-    <div class="flex-row mt-4" v-if="['textfield', 'textarea', 'password'].includes(component.type)">
+    <div class="flex flex-col" v-if="['textfield', 'textarea', 'password'].includes(component.type)">
       <div class="prop-field flex-1">
         <label class="prop-label">Min Length</label>
         <InputText
@@ -66,7 +66,7 @@ function updateValidation(prop: string, value: any) {
       </div>
     </div>
     
-    <div class="flex-row mt-4" v-if="['number', 'currency'].includes(component.type)">
+    <div class="flex flex-col" v-if="['number', 'currency'].includes(component.type)">
       <div class="prop-field flex-1">
         <label class="prop-label">Minimum</label>
         <InputText
@@ -139,8 +139,4 @@ function updateValidation(prop: string, value: any) {
   margin-bottom: 0.375rem;
 }
 
-.flex-row {
-  display: flex;
-  gap: 0.5rem;
-}
 </style>

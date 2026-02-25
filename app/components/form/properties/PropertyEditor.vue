@@ -116,6 +116,8 @@ function handlePropUpdate(prop: string, value: any) {
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .properties-header {
@@ -125,12 +127,17 @@ function handlePropUpdate(prop: string, value: any) {
   padding: 0.75rem 1rem;
   background: var(--builder-surface, #ffffff);
   border-bottom: 1px solid var(--builder-border, #e5e7eb);
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .properties-body {
   padding: 1rem;
+  overflow-x: hidden;
   overflow-y: auto;
   flex: 1;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .properties-title {
@@ -189,5 +196,28 @@ function handlePropUpdate(prop: string, value: any) {
   padding: 0.5rem 0 0 0;
   background: transparent;
   border: none !important;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* ─── Constrain all inputs inside properties ─── */
+:deep(.p-accordioncontent-content *) {
+  box-sizing: border-box;
+}
+
+:deep(.p-accordioncontent-content .p-inputtext),
+:deep(.p-accordioncontent-content .p-select),
+:deep(.p-accordioncontent-content .p-multiselect),
+:deep(.p-accordioncontent-content .p-textarea),
+:deep(.p-accordioncontent-content .code-editor-wrapper),
+:deep(.p-accordioncontent-content .code-editor-container) {
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+:deep(.p-accordioncontent-content .cm-editor) {
+  max-width: 100%;
 }
 </style>

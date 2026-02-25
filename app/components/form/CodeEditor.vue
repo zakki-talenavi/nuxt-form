@@ -104,6 +104,8 @@ const extensions = computed(() => {
   margin-bottom: 1rem;
   display: flex;
   flex-direction: column;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .code-editor-header {
