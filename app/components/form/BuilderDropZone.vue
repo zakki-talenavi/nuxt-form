@@ -221,8 +221,8 @@ function handleDropEnd(event: DragEvent) {
 .builder-dropzone {
   min-height: 100%;
   display: flex;
-  flex: 1;
   flex-direction: column;
+  flex: 1;
 }
 
 /* Base styles ported from FormBuilder */
@@ -379,19 +379,20 @@ function handleDropEnd(event: DragEvent) {
 }
 
 .canvas-drop-end {
-  flex: 1;
-  min-height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
+  padding: 0.75rem;
   margin-top: 0.75rem;
   border: 1.5px dashed var(--builder-border, #e5e7eb);
   border-radius: var(--border-radius, 0.5rem);
+  text-align: center;
   color: var(--color-placeholder, #9ca3af);
   font-size: 0.8125rem;
   background: var(--color-hover, #f9fafb);
   transition: all 0.2s;
+  min-height: 200px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .canvas-drop-end:hover {
   border-color: var(--builder-primary, #6366f1);

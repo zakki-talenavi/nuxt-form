@@ -361,6 +361,8 @@ function copySchema() {
   flex: 1;
   overflow-y: auto;
   padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .canvas-empty {
