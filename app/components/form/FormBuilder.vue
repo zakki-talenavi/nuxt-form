@@ -436,6 +436,7 @@ function copySchema() {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .properties-header {
@@ -465,11 +466,14 @@ function copySchema() {
   height: 100%;
   overflow-y: auto;
   background: var(--builder-sidebar-bg);
+  width: 100%;
 }
 
 .builder-properties :deep(.p-accordionpanel) {
   border: none !important;
   border-bottom: 1px solid var(--builder-border) !important;
+  width: 100%;
+  overflow: hidden;
 }
 
 .builder-properties :deep(.p-accordionheader) {
@@ -497,32 +501,24 @@ function copySchema() {
   color: var(--builder-primary);
 }
 
+.builder-properties :deep(.p-accordioncontent-wrapper) {
+  width: 100%;
+  overflow: hidden;
+}
+
 .builder-properties :deep(.p-accordioncontent-content) {
   padding: 1rem;
   background: var(--builder-sidebar-bg);
   border: none !important;
   box-sizing: border-box;
   overflow: hidden;
-  max-width: 100%;
+  width: 100%;
 }
 
 /* ─── Force ALL children inside properties to respect width ─── */
-.builder-properties :deep(*) {
+.builder-properties :deep(.p-accordioncontent-content *) {
   box-sizing: border-box;
   max-width: 100%;
-}
-
-.builder-properties :deep(.p-inputtext),
-.builder-properties :deep(.p-select),
-.builder-properties :deep(.p-multiselect),
-.builder-properties :deep(.p-textarea) {
-  width: 100%;
-}
-
-.builder-properties :deep(.code-editor-wrapper),
-.builder-properties :deep(.code-editor-container),
-.builder-properties :deep(.cm-editor) {
-  width: 100%;
 }
 
 /* ─── Sidebar Accordion Overrides ─── */
