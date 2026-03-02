@@ -291,12 +291,13 @@ export function useFormBuilder(initialSchema?: FormSchema) {
   }
 
   /**
-   * Clear all components.
+   * Clear all components and reset display mode back to form.
    */
   function clearForm(): void {
     pushHistory()
-    schema.value = { ...schema.value, components: [] }
+    schema.value = { display: 'form', components: [] }
     selectedComponentKey.value = null
+    activeWizardPageIndex.value = 0
   }
 
   /**
@@ -328,10 +329,17 @@ export function useFormBuilder(initialSchema?: FormSchema) {
   /**
    * Switch between form and wizard display mode.
    * When switching to wizard: wraps existing components into a default page panel.
-   * When switching to form: flattens panel contents into flat components list.
+   * Switching from wizard back to form is NOT allowed — it would destroy the wizard structure.
    */
   function setDisplayMode(mode: 'form' | 'wizard'): void {
     if (displayMode.value === mode) return
+
+    // Prevent switching from wizard back to form
+    if (displayMode.value === 'wizard' && mode === 'form') {
+      console.warn('[useFormBuilder] Cannot switch from wizard back to form mode — this would destroy the wizard structure.')
+      return
+    }
+
     pushHistory()
 
     if (mode === 'wizard') {

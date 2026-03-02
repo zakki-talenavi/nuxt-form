@@ -257,17 +257,16 @@ function handleDropEnd(event: DragEvent) {
 }
 
 .canvas-component {
-  border: 1.5px solid var(--builder-border, #e5e7eb);
-  border-radius: var(--border-radius, 0.5rem);
-  background: var(--builder-surface, #ffffff);
+  border: none;
+  border-radius: 0;
+  background: transparent;
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 .canvas-component:hover {
-  border-color: var(--builder-primary, #6366f1);
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  /* no hover effect */
 }
 .canvas-component.drag-over {
   border-top-width: 4px;
@@ -374,8 +373,7 @@ function handleDropEnd(event: DragEvent) {
 }
 
 .canvas-component__preview {
-  padding: 1.25rem;
-  min-height: 4rem;
+  padding: 0 0.75rem;
 }
 
 .canvas-drop-end {

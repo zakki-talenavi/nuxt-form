@@ -11,12 +11,14 @@
  * - JSON schema export
  */
 import { ref, computed, watch, provide, nextTick } from 'vue'
+import { useConfirm } from 'primevue/useconfirm'
 import type { FormSchema, FormComponentSchema, SelectValue } from '../../types/form'
 import { useFormBuilder } from '../../composables/useFormBuilder'
 import { useComponentRegistry } from '../../composables/useComponentRegistry'
 import BuilderDropZone from './BuilderDropZone.vue'
 import WizardBuilderCanvas from './WizardBuilderCanvas.vue'
 import PropertyEditor from './properties/PropertyEditor.vue'
+import WizardPreview from './WizardPreview.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -34,10 +36,23 @@ const emit = defineEmits<{
 
 const registry = useComponentRegistry()
 const builder = useFormBuilder(props.schema)
+const confirm = useConfirm()
 provide('formBuilder', builder)
 
 // ─── Local state ─────────────────────────────────────────────
 const showJsonPanel = ref(false)
+const showModeAlert = ref(false)
+let modeAlertTimer: ReturnType<typeof setTimeout> | null = null
+
+function handleFormModeClick() {
+  if (builder.displayMode.value === 'wizard') {
+    showModeAlert.value = true
+    if (modeAlertTimer) clearTimeout(modeAlertTimer)
+    modeAlertTimer = setTimeout(() => { showModeAlert.value = false }, 4000)
+    return
+  }
+  builder.setDisplayMode('form')
+}
 
 // ─── Computed ────────────────────────────────────────────────
 const jsonOutput = computed(() =>
@@ -70,6 +85,27 @@ function copySchema() {
   navigator.clipboard.writeText(jsonOutput.value)
 }
 
+// ─── Clear Confirmation ──────────────────────────────────────
+function handleClear() {
+  confirm.require({
+    message: 'Apakah Anda yakin ingin menghapus semua komponen? Tindakan ini tidak bisa dibatalkan.',
+    header: 'Konfirmasi Clear',
+    icon: 'pi pi-exclamation-triangle',
+    rejectLabel: 'Batal',
+    acceptLabel: 'Ya, Hapus Semua',
+    rejectProps: {
+      severity: 'secondary',
+      outlined: true,
+    },
+    acceptProps: {
+      severity: 'danger',
+    },
+    accept: () => {
+      builder.clearForm()
+    },
+  })
+}
+
 
 
 </script>
@@ -87,7 +123,7 @@ function copySchema() {
           <button
             class="mode-toggle__btn"
             :class="{ 'mode-toggle__btn--active': builder.displayMode.value === 'form' }"
-            @click="builder.setDisplayMode('form')"
+            @click="handleFormModeClick"
           >
             📋 Form
           </button>
@@ -133,7 +169,7 @@ function copySchema() {
         </button>
         <button
           class="toolbar-btn toolbar-btn--danger"
-          @click="builder.clearForm()"
+          @click="handleClear()"
         >
           🗑 Clear
         </button>
@@ -172,10 +208,23 @@ function copySchema() {
         </Accordion>
       </aside>
 
+      <!-- ─── Mode Alert ─────────────────────────────────── -->
+      <Transition name="alert-slide">
+        <div v-if="showModeAlert" class="mode-alert">
+          <span class="mode-alert__icon">⚠️</span>
+          <span class="mode-alert__text">Tidak bisa langsung kembali ke mode Form dari Wizard. Klik <strong>🗑 Clear</strong> terlebih dahulu untuk mereset, lalu pilih mode yang diinginkan.</span>
+          <button class="mode-alert__close" @click="showModeAlert = false">✕</button>
+        </div>
+      </Transition>
+
       <!-- ─── Canvas: Form Preview ────────────────────────── -->
       <main class="builder-canvas">
-        <!-- Wizard mode canvas -->
+        <!-- Wizard mode: builder canvas -->
         <WizardBuilderCanvas v-if="builder.displayMode.value === 'wizard' && !builder.isPreviewMode.value" />
+        <!-- Wizard mode: live preview with stepper -->
+        <div v-else-if="builder.displayMode.value === 'wizard' && builder.isPreviewMode.value" class="wizard-preview-wrapper">
+          <WizardPreview />
+        </div>
         <!-- Standard flat form canvas -->
         <BuilderDropZone v-else :list="builder.schema.value.components" />
       </main>
@@ -198,6 +247,9 @@ function copySchema() {
         <pre class="json-content"><code>{{ jsonOutput }}</code></pre>
       </aside>
     </div>
+
+    <!-- ─── Confirm Dialog ──────────────────────────────── -->
+    <ConfirmDialog />
   </div>
 </template>
 
@@ -323,11 +375,66 @@ function copySchema() {
   color: #ffffff;
 }
 
+/* ─── Mode Alert ───────────────────────────────────────────── */
+.mode-alert {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border-bottom: 2px solid #f59e0b;
+  color: #92400e;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.mode-alert__icon {
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.mode-alert__text {
+  flex: 1;
+}
+
+.mode-alert__close {
+  background: none;
+  border: none;
+  color: #92400e;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.mode-alert__close:hover {
+  opacity: 1;
+}
+
+.alert-slide-enter-active,
+.alert-slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.alert-slide-enter-from,
+.alert-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
 /* ─── Content Layout ───────────────────────────────────────── */
 .builder-content {
   display: flex;
   flex: 1;
   overflow: hidden;
+  position: relative;
 }
 
 /* ─── Sidebar ──────────────────────────────────────────────── */
@@ -812,5 +919,18 @@ function copySchema() {
 .component-list-leave-active {
   position: absolute;
   width: 100%;
+}
+
+/* ─── Wizard Preview ───────────────────────────────────────── */
+.wizard-preview-wrapper {
+  flex: 1;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: var(--builder-surface, #ffffff);
+  border-radius: 0.75rem;
+  border: 1px solid var(--builder-border, #e5e7eb);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 </style>
