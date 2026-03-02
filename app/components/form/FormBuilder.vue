@@ -46,10 +46,17 @@ let modeAlertTimer: ReturnType<typeof setTimeout> | null = null
 
 function handleFormModeClick() {
   if (builder.displayMode.value === 'wizard') {
-    showModeAlert.value = true
-    if (modeAlertTimer) clearTimeout(modeAlertTimer)
-    modeAlertTimer = setTimeout(() => { showModeAlert.value = false }, 4000)
-    return
+    // Check if wizard has any actual components
+    const hasComponents = builder.wizardPages.value.some(
+      (panel) => panel.components && panel.components.length > 0
+    )
+
+    if (hasComponents) {
+      showModeAlert.value = true
+      if (modeAlertTimer) clearTimeout(modeAlertTimer)
+      modeAlertTimer = setTimeout(() => { showModeAlert.value = false }, 4000)
+      return
+    }
   }
   builder.setDisplayMode('form')
 }

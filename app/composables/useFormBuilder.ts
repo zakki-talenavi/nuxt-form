@@ -334,10 +334,15 @@ export function useFormBuilder(initialSchema?: FormSchema) {
   function setDisplayMode(mode: 'form' | 'wizard'): void {
     if (displayMode.value === mode) return
 
-    // Prevent switching from wizard back to form
+    // Prevent switching from wizard back to form if there are components
     if (displayMode.value === 'wizard' && mode === 'form') {
-      console.warn('[useFormBuilder] Cannot switch from wizard back to form mode — this would destroy the wizard structure.')
-      return
+      const hasComponents = schema.value.components.some(
+        (c) => c.type === 'panel' && Array.isArray(c.components) && c.components.length > 0
+      )
+      if (hasComponents) {
+        console.warn('[useFormBuilder] Cannot switch from wizard back to form mode with existing components — this would destroy the wizard structure.')
+        return
+      }
     }
 
     pushHistory()
