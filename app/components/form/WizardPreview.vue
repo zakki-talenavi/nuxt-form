@@ -8,7 +8,7 @@
  * and live field rendering — directly from the builder schema.
  */
 import { ref, computed, inject } from 'vue'
-import type { FormComponentSchema } from '../../types/form'
+import type { FormComponentSchema, ValidationError } from '../../types/form'
 import { useFormBuilder } from '../../composables/useFormBuilder'
 import { useComponentRegistry } from '../../composables/useComponentRegistry'
 
@@ -29,6 +29,7 @@ function isLayoutComponent(type: string): boolean {
 // ─── Local wizard state ───────────────────────────────────────
 const currentPage = ref(0)
 const previewData = ref<Record<string, unknown>>({})
+const pageErrors = ref<Record<string, string>>({})
 
 const pages = computed(() => {
   return builder.wizardPages.value.map((panel, index) => ({
@@ -49,9 +50,63 @@ const progress = computed(() => {
   return Math.round((currentPage.value / (totalPages.value - 1)) * 100)
 })
 
+// ─── Validation helpers ───────────────────────────────────────
+function collectInputComponents(components: FormComponentSchema[]): FormComponentSchema[] {
+  const result: FormComponentSchema[] = []
+  for (const comp of components) {
+    if (layoutTypes.has(comp.type)) {
+      // Recurse into layout children
+      if (comp.components) {
+        result.push(...collectInputComponents(comp.components))
+      }
+      if (comp.columns) {
+        for (const col of comp.columns) {
+          if (col.components) {
+            result.push(...collectInputComponents(col.components))
+          }
+        }
+      }
+    } else {
+      result.push(comp)
+    }
+  }
+  return result
+}
+
+function isFieldEmpty(value: unknown): boolean {
+  if (value === undefined || value === null) return true
+  if (typeof value === 'string' && value.trim() === '') return true
+  if (Array.isArray(value) && value.length === 0) return true
+  return false
+}
+
+function validateCurrentPage(): boolean {
+  if (!activePage.value) return true
+  const errors: Record<string, string> = {}
+  const inputs = collectInputComponents(activePage.value.components)
+
+  for (const comp of inputs) {
+    if (comp.validate?.required && isFieldEmpty(previewData.value[comp.key])) {
+      const label = comp.label || comp.key
+      errors[comp.key] = `${label} wajib diisi`
+    }
+  }
+
+  pageErrors.value = errors
+  return Object.keys(errors).length === 0
+}
+
+function getFieldErrors(key: string): ValidationError[] {
+  const msg = pageErrors.value[key]
+  if (!msg) return []
+  return [{ key, message: msg, type: 'required' }]
+}
+
 function nextPage() {
+  if (!validateCurrentPage()) return
   if (!isLastPage.value) {
     currentPage.value++
+    pageErrors.value = {}
   }
 }
 
@@ -62,13 +117,23 @@ function prevPage() {
 }
 
 function goToPage(index: number) {
+  // Only allow going to previous pages freely; forward requires validation
   if (index >= 0 && index < totalPages.value) {
+    if (index > currentPage.value) {
+      if (!validateCurrentPage()) return
+    }
     currentPage.value = index
+    pageErrors.value = {}
   }
 }
 
 function handleFieldUpdate(key: string, value: unknown) {
   previewData.value = { ...previewData.value, [key]: value }
+  // Clear error for this field when user fills it
+  if (pageErrors.value[key] && !isFieldEmpty(value)) {
+    const { [key]: _, ...rest } = pageErrors.value
+    pageErrors.value = rest
+  }
 }
 </script>
 
@@ -116,7 +181,7 @@ function handleFieldUpdate(key: string, value: unknown) {
             :is="registry.getComponent(comp.type)"
             :component="comp"
             :model-value="previewData[comp.key]"
-            :errors="[]"
+            :errors="getFieldErrors(comp.key)"
             :disabled="false"
             :read-only="false"
             @update:model-value="(val: unknown) => handleFieldUpdate(comp.key, val)"
@@ -127,7 +192,7 @@ function handleFieldUpdate(key: string, value: unknown) {
                 :is="registry.getComponent(childComp.type)"
                 :component="childComp"
                 :model-value="previewData[childComp.key]"
-                :errors="[]"
+                :errors="getFieldErrors(childComp.key)"
                 :disabled="false"
                 :read-only="false"
                 @update:model-value="(val: unknown) => handleFieldUpdate(childComp.key, val)"
@@ -140,7 +205,7 @@ function handleFieldUpdate(key: string, value: unknown) {
             :is="registry.getComponent(comp.type)"
             :component="comp"
             :model-value="previewData[comp.key]"
-            :errors="[]"
+            :errors="getFieldErrors(comp.key)"
             :disabled="false"
             :read-only="false"
             @update:model-value="(val: unknown) => handleFieldUpdate(comp.key, val)"
