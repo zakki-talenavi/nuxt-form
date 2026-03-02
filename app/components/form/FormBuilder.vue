@@ -15,6 +15,7 @@ import type { FormSchema, FormComponentSchema, SelectValue } from '../../types/f
 import { useFormBuilder } from '../../composables/useFormBuilder'
 import { useComponentRegistry } from '../../composables/useComponentRegistry'
 import BuilderDropZone from './BuilderDropZone.vue'
+import WizardBuilderCanvas from './WizardBuilderCanvas.vue'
 import PropertyEditor from './properties/PropertyEditor.vue'
 
 const props = withDefaults(
@@ -81,6 +82,24 @@ function copySchema() {
         <h2 class="builder-toolbar__title">📐 Form Builder</h2>
       </div>
       <div class="builder-toolbar__actions">
+        <!-- Display Mode Toggle -->
+        <div class="mode-toggle">
+          <button
+            class="mode-toggle__btn"
+            :class="{ 'mode-toggle__btn--active': builder.displayMode.value === 'form' }"
+            @click="builder.setDisplayMode('form')"
+          >
+            📋 Form
+          </button>
+          <button
+            class="mode-toggle__btn"
+            :class="{ 'mode-toggle__btn--active': builder.displayMode.value === 'wizard' }"
+            @click="builder.setDisplayMode('wizard')"
+          >
+            🧙 Wizard
+          </button>
+        </div>
+        <div class="toolbar-divider" />
         <button
           class="toolbar-btn"
           :disabled="!builder.canUndo.value"
@@ -155,7 +174,10 @@ function copySchema() {
 
       <!-- ─── Canvas: Form Preview ────────────────────────── -->
       <main class="builder-canvas">
-        <BuilderDropZone :list="builder.schema.value.components" />
+        <!-- Wizard mode canvas -->
+        <WizardBuilderCanvas v-if="builder.displayMode.value === 'wizard' && !builder.isPreviewMode.value" />
+        <!-- Standard flat form canvas -->
+        <BuilderDropZone v-else :list="builder.schema.value.components" />
       </main>
 
       <!-- ─── Property Editor Panel ───────────────────────── -->
@@ -265,6 +287,40 @@ function copySchema() {
   height: 1.25rem;
   background: var(--builder-border);
   margin: 0 0.25rem;
+}
+
+/* ─── Mode Toggle ─────────────────────────────────────────── */
+.mode-toggle {
+  display: flex;
+  border: 1px solid var(--builder-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.mode-toggle__btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: none;
+  background: var(--builder-surface);
+  color: var(--builder-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.mode-toggle__btn:not(:last-child) {
+  border-right: 1px solid var(--builder-border);
+}
+
+.mode-toggle__btn:hover:not(.mode-toggle__btn--active) {
+  background: var(--builder-surface-hover);
+}
+
+.mode-toggle__btn--active {
+  background: var(--builder-primary);
+  color: #ffffff;
 }
 
 /* ─── Content Layout ───────────────────────────────────────── */

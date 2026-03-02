@@ -73,6 +73,15 @@ export function useFormBuilder(initialSchema?: FormSchema) {
   const history = ref<FormSchema[]>([])
   const historyIndex = ref(-1)
 
+  // ─── Wizard State ──────────────────────────────────────────
+  const displayMode = computed({
+    get: () => (schema.value.display === 'wizard' ? 'wizard' : 'form') as 'form' | 'wizard',
+    set: (val: 'form' | 'wizard') => {
+      schema.value = { ...schema.value, display: val }
+    },
+  })
+  const activeWizardPageIndex = ref(0)
+
   // ─── Computed ──────────────────────────────────────────────
   const components = computed({
     get: () => schema.value.components,
@@ -103,6 +112,19 @@ export function useFormBuilder(initialSchema?: FormSchema) {
 
   const canUndo = computed(() => historyIndex.value > 0)
   const canRedo = computed(() => historyIndex.value < history.value.length - 1)
+
+  // ─── Wizard Computed ───────────────────────────────────────
+  const wizardPages = computed(() => {
+    if (displayMode.value !== 'wizard') return []
+    return schema.value.components.filter((c) => c.type === 'panel')
+  })
+
+  const activeWizardPage = computed<FormComponentSchema | null>(() => {
+    const pages = wizardPages.value
+    if (pages.length === 0) return null
+    const idx = Math.min(activeWizardPageIndex.value, pages.length - 1)
+    return pages[idx] ?? null
+  })
 
   // ─── History ───────────────────────────────────────────────
   function pushHistory(): void {
@@ -301,6 +323,169 @@ export function useFormBuilder(initialSchema?: FormSchema) {
     selectedComponentKey.value = null
   }
 
+  // ─── Wizard Page Operations ────────────────────────────────
+
+  /**
+   * Switch between form and wizard display mode.
+   * When switching to wizard: wraps existing components into a default page panel.
+   * When switching to form: flattens panel contents into flat components list.
+   */
+  function setDisplayMode(mode: 'form' | 'wizard'): void {
+    if (displayMode.value === mode) return
+    pushHistory()
+
+    if (mode === 'wizard') {
+      // Wrap existing non-panel components into a default first page
+      const existingComponents = schema.value.components
+      const hasPanels = existingComponents.some((c) => c.type === 'panel')
+
+      if (!hasPanels && existingComponents.length > 0) {
+        const pageKey = generateComponentKey('panel', existingKeys.value)
+        schema.value = {
+          ...schema.value,
+          display: 'wizard',
+          components: [
+            {
+              type: 'panel',
+              key: pageKey,
+              title: 'Page 1',
+              label: 'Page 1',
+              input: false,
+              components: [...existingComponents],
+            },
+          ],
+        }
+      } else if (!hasPanels) {
+        // Empty form → create one default page
+        const pageKey = generateComponentKey('panel', existingKeys.value)
+        schema.value = {
+          ...schema.value,
+          display: 'wizard',
+          components: [
+            {
+              type: 'panel',
+              key: pageKey,
+              title: 'Page 1',
+              label: 'Page 1',
+              input: false,
+              components: [],
+            },
+          ],
+        }
+      } else {
+        schema.value = { ...schema.value, display: 'wizard' }
+      }
+      activeWizardPageIndex.value = 0
+    } else {
+      // Flatten: extract components from panels
+      const flatComponents: FormComponentSchema[] = []
+      for (const comp of schema.value.components) {
+        if (comp.type === 'panel' && Array.isArray(comp.components)) {
+          flatComponents.push(...comp.components)
+        } else {
+          flatComponents.push(comp)
+        }
+      }
+      schema.value = {
+        ...schema.value,
+        display: 'form',
+        components: flatComponents,
+      }
+    }
+    selectedComponentKey.value = null
+  }
+
+  /**
+   * Add a new wizard page (panel) at the given index or at the end.
+   */
+  function addWizardPage(title?: string, index?: number): FormComponentSchema {
+    pushHistory()
+
+    const pageNumber = wizardPages.value.length + 1
+    const pageKey = generateComponentKey('panel', existingKeys.value)
+    const pageTitle = title ?? `Page ${pageNumber}`
+    const newPage: FormComponentSchema = {
+      type: 'panel',
+      key: pageKey,
+      title: pageTitle,
+      label: pageTitle,
+      input: false,
+      components: [],
+    }
+
+    const insertAt = index ?? schema.value.components.length
+    schema.value.components.splice(insertAt, 0, newPage)
+    activeWizardPageIndex.value = wizardPages.value.length - 1
+    return newPage
+  }
+
+  /**
+   * Remove a wizard page by key.
+   */
+  function removeWizardPage(pageKey: string): void {
+    const idx = schema.value.components.findIndex(
+      (c) => c.type === 'panel' && c.key === pageKey,
+    )
+    if (idx === -1) return
+    if (wizardPages.value.length <= 1) return // Don't remove last page
+
+    pushHistory()
+    schema.value.components.splice(idx, 1)
+
+    // Adjust active page index
+    if (activeWizardPageIndex.value >= wizardPages.value.length) {
+      activeWizardPageIndex.value = Math.max(0, wizardPages.value.length - 1)
+    }
+    selectedComponentKey.value = null
+  }
+
+  /**
+   * Rename a wizard page.
+   */
+  function renameWizardPage(pageKey: string, newTitle: string): void {
+    pushHistory()
+    const page = schema.value.components.find(
+      (c) => c.type === 'panel' && c.key === pageKey,
+    )
+    if (page) {
+      page.title = newTitle
+      page.label = newTitle
+    }
+  }
+
+  /**
+   * Reorder wizard pages.
+   */
+  function reorderWizardPages(fromIndex: number, toIndex: number): void {
+    if (fromIndex === toIndex) return
+    const panels = schema.value.components
+    const panelIndices = panels
+      .map((c, i) => (c.type === 'panel' ? i : -1))
+      .filter((i) => i !== -1)
+
+    if (fromIndex < 0 || fromIndex >= panelIndices.length) return
+    if (toIndex < 0 || toIndex >= panelIndices.length) return
+
+    pushHistory()
+
+    const realFrom = panelIndices[fromIndex]!
+    const realTo = panelIndices[toIndex]!
+    const [moved] = panels.splice(realFrom, 1)
+    if (moved) {
+      panels.splice(realTo > realFrom ? realTo - 1 : realTo, 0, moved)
+    }
+    activeWizardPageIndex.value = toIndex
+  }
+
+  /**
+   * Set the active wizard page by index.
+   */
+  function setActiveWizardPage(index: number): void {
+    if (index >= 0 && index < wizardPages.value.length) {
+      activeWizardPageIndex.value = index
+    }
+  }
+
   // ─── Initialize history ────────────────────────────────────
   pushHistory()
 
@@ -316,6 +501,12 @@ export function useFormBuilder(initialSchema?: FormSchema) {
     canRedo,
     isPreviewMode,
 
+    // Wizard state
+    displayMode,
+    wizardPages,
+    activeWizardPage,
+    activeWizardPageIndex,
+
     // Actions
     addComponent,
     removeComponent,
@@ -330,5 +521,13 @@ export function useFormBuilder(initialSchema?: FormSchema) {
     togglePreview,
     undo,
     redo,
+
+    // Wizard actions
+    setDisplayMode,
+    addWizardPage,
+    removeWizardPage,
+    renameWizardPage,
+    reorderWizardPages,
+    setActiveWizardPage,
   }
 }

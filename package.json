@@ -30,6 +30,8 @@
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
-    "@types/json-logic-js": "^2.0.8"
+    "@tailwindcss/vite": "^4.2.1",
+    "@types/json-logic-js": "^2.0.8",
+    "tailwindcss": "^4.2.1"
   }
 }

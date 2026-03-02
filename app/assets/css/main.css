@@ -1,0 +1,4 @@
+@import "tailwindcss";
+
+/* Base utility classes can be removed once tailwind is fully applied, 
+   but we'll leave it simple for now and let tailwind handle utilities */
