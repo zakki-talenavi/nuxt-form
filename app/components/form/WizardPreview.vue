@@ -11,6 +11,7 @@ import { ref, computed, inject } from 'vue'
 import type { FormComponentSchema, ValidationError } from '../../types/form'
 import { useFormBuilder } from '../../composables/useFormBuilder'
 import { useComponentRegistry } from '../../composables/useComponentRegistry'
+import { useCalculatedValues } from '../../composables/useCalculatedValues'
 
 const builder = inject('formBuilder') as ReturnType<typeof useFormBuilder>
 if (!builder) {
@@ -135,6 +136,23 @@ function handleFieldUpdate(key: string, value: unknown) {
     pageErrors.value = rest
   }
 }
+
+// ─── Calculated Values ─────────────────────────────────────────
+// Provide all inputs across all pages to the calculator, since
+// cross-page calculations are common.
+const allWizardInputs = computed(() => {
+  const flat: FormComponentSchema[] = []
+  for (const page of pages.value) {
+    flat.push(...collectInputComponents(page.components))
+  }
+  return flat
+})
+
+useCalculatedValues(
+  previewData.value,
+  allWizardInputs,
+  (key, val) => handleFieldUpdate(key, val)
+)
 </script>
 
 <template>

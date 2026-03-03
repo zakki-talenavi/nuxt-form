@@ -26,10 +26,10 @@ import {
   flattenComponents,
   validateField,
   evaluateConditional,
-  evaluateCalculatedValue,
   createEmptySubmission,
 } from '../utils/schema-parser'
 import { useAdvancedLogic } from './useAdvancedLogic'
+import { useCalculatedValues } from './useCalculatedValues'
 
 export function useFormRenderer(
   initialSchema?: FormSchema,
@@ -88,6 +88,14 @@ export function useFormRenderer(
   }))
 
   const { componentOverrides } = useAdvancedLogic(() => getCachedComponents(), formData)
+  
+  // Set up calculated values tracking. It automatically watches `formData`
+  // and calls `setFieldValue` when a calculation expression pushes a change.
+  const { recalculate } = useCalculatedValues(
+    formData,
+    allComponents,
+    (key, val) => setFieldValue(key, val)
+  )
 
   // ─── Methods ───────────────────────────────────────────────
 
@@ -152,24 +160,11 @@ export function useFormRenderer(
   }
 
   /**
-   * Run javascript calculations on all applicable fields
+   * Run javascript calculations on all applicable fields (now delegated to useCalculatedValues)
+   * This logic is superseded by `recalculate()` from useCalculatedValues
    */
   function executeCalculations(): void {
-    let changed = false
-    const components = getCachedComponents()
-    
-    for (const comp of components) {
-      if (comp.calculateValue && !comp.hidden && !comp.disabled) {
-        const currentVal = formData[comp.key]
-        const newVal = evaluateCalculatedValue(comp, formData, currentVal)
-        
-        // Prevent infinite loops by checking rough equality
-        if (JSON.stringify(currentVal) !== JSON.stringify(newVal)) {
-          formData[comp.key] = newVal
-          changed = true
-        }
-      }
-    }
+    recalculate()
   }
 
   /**
